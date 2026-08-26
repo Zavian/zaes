@@ -17,7 +17,7 @@ export const projects: Project[] = [
     detailedContent: {
       overview: [
         "Digital tabletop simulators provide physics and 3D space, but lack native mechanics for complex roleplaying systems. In 2019, I started building a dedicated Lua/XML automation system to eliminate manual record-keeping and speed up gameplay.",
-        "Over five years of continuous weekly playtesting, the toolset has evolved from basic dice and modifier scripts into an event-driven framework featuring character sheet sync, condition tracking, custom inventory drawers, dynamic turn queues, and combat resolvers.",
+        "Over five years of continuous weekly playtesting, the toolset has evolved from basic dice and modifier scripts into an event-driven framework featuring condition tracking, dynamic turn queues, and combat resolvers.",
         "I am currently developing a complete '2.0' architectural rewrite. The new iteration decouples game rules from Tabletop Simulator's proprietary UI runtime via a modular state-machine pattern, making it straightforward to adapt from D&D 5e to Daggerheart and custom rulesets."
       ],
       architecture: [
@@ -101,7 +101,7 @@ export const projects: Project[] = [
       ],
       keyFeatures: [
         "Campaign I: Lament of the Damned - Foundational campaign exploring regional fractures, ancient arcane seals, and the northern borders.",
-        "Campaign II: The Dragon Ajax & The Fallen - Focused on the struggle to defeat the dragon Ajax after the demise of the initial party, dealing with resource cartels and political warfare.",
+        "Campaign II: The Dragon Ajax & The Fallen - Focused on the struggle to defeat the dragon Ajax after the demise of the initial party, dealing with multiplanar conflict and ultimately a monstrous faction of dragons.",
         "Campaign III: A Vow of Silk and Steel - Active weekly campaign set in the hidden continent of Astravia, navigating a high-stakes three-way power struggle between The Crown, The Church of the Sacred Flame, and The Academy."
       ],
       currentStatus: "Active weekly campaign ('A Vow of Silk and Steel') and continuous lore archive expansion.",

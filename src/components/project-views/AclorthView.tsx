@@ -197,7 +197,7 @@ export const AclorthView: React.FC<AclorthViewProps> = ({ project, onBack }) => 
               <span className="text-xs font-mono text-gray-400 dark:text-gray-500">Second Campaign (2021 - 2023)</span>
             </div>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-              Spurred by the demise of the realm's first adventuring party at the claws of the legendary dragon Ajax. Explored mercenary alliances, political warfare, industrial logistics, and the ultimate strategic confrontation to bring down Ajax.
+              Spurred by the demise of the realm's first adventuring party at the claws of the legendary dragon Ajax. Explored mercenary alliances, political tension, multiplanar adventuring, and the ultimate strategic confrontation to bring down Ajax.
             </p>
           </div>
 
