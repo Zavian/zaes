@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cvData } from '../content/cv';
-import { X, Printer, Copy, Check, MapPin, Mail, Globe, Github, Linkedin, Phone, FileText, Eye, Code } from 'lucide-react';
+import { X, Copy, Check, MapPin, Mail, Globe, Github, Linkedin, Phone, FileText, Eye, Code, Download } from 'lucide-react';
 
 interface CvModalProps {
   isOpen: boolean;
@@ -25,10 +25,6 @@ export const CvModal: React.FC<CvModalProps> = ({ isOpen, onClose }) => {
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   const getMarkdownContent = () => {
     return `# ${cvData.name.toUpperCase()}
@@ -151,31 +147,19 @@ References available upon request.
                 )}
               </button>
 
-              <button
-                onClick={handlePrint}
+              <a
+                href="/cv.pdf"
+                download="Emanuele-Sbabo-CV.pdf"
                 className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-mono bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white rounded font-medium shadow-xs transition-colors cursor-pointer"
-                title="Print Document or Save as PDF"
+                title="Download the original PDF"
               >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print / PDF</span>
-              </button>
+                <Download className="w-3.5 h-3.5" />
+                <span>Download PDF</span>
+              </a>
             </div>
 
             {/* Right: Tab Switcher */}
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#20242D] p-1 rounded border border-gray-200 dark:border-[#2E333D] text-xs font-mono ml-auto">
-              <button
-                onClick={() => setActiveTab('pdf')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors cursor-pointer ${
-                  activeTab === 'pdf'
-                    ? 'bg-white dark:bg-[#181A20] text-emerald-800 dark:text-emerald-300 font-semibold shadow-xs'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-[#1A1A1A] dark:hover:text-white'
-                }`}
-                title="Exact PDF Sheet Replica"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>PDF Sheet</span>
-              </button>
-
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#20242D] p-1 rounded border border-gray-200 dark:border-[#2E333D] text-xs font-mono ml-0 sm:ml-auto">
               <button
                 onClick={() => setActiveTab('web')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors cursor-pointer ${
@@ -201,16 +185,50 @@ References available upon request.
                 <Code className="w-3.5 h-3.5" />
                 <span>Markdown</span>
               </button>
+
+              <button
+                onClick={() => setActiveTab('pdf')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                  activeTab === 'pdf'
+                    ? 'bg-white dark:bg-[#181A20] text-emerald-800 dark:text-emerald-300 font-semibold shadow-xs'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-[#1A1A1A] dark:hover:text-white'
+                }`}
+                title="Open the original PDF"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>PDF Sheet</span>
+              </button>
             </div>
 
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* TAB 1: EXACT PDF DOCUMENT REPLICA (2-PAGE SHEET VIEW)                     */}
-        {/* ========================================================================= */}
+        {/* Original PDF document */}
         {activeTab === 'pdf' && (
-          <div className="printable-cv-container p-3 sm:p-8 bg-[#DCE0E6] dark:bg-[#0B0D11] flex flex-col items-center gap-8">
+          <div className="bg-[#DCE0E6] dark:bg-[#0B0D11] p-3 sm:p-6">
+            <div className="hidden sm:block h-[min(75vh,900px)] overflow-hidden bg-white shadow-xl">
+              <iframe
+                src="/cv.pdf"
+                title="Emanuele Sbabo CV PDF"
+                className="h-full w-full border-0"
+              />
+            </div>
+            <div className="sm:hidden flex min-h-[45vh] items-center justify-center">
+              <a
+                href="/cv.pdf"
+                download="Emanuele-Sbabo-CV.pdf"
+                className="flex items-center gap-2 rounded bg-emerald-700 px-5 py-3 text-sm font-medium text-white shadow-xs transition-colors hover:bg-emerald-800"
+              >
+                <Download className="h-4 w-4" />
+                Download PDF
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Legacy generated sheet retained temporarily for print styling. */}
+        {activeTab === 'pdf' && (
+          <div className="hidden printable-cv-container p-3 sm:p-8 bg-[#DCE0E6] dark:bg-[#0B0D11] flex flex-col items-center gap-8">
             
             {/* PAGE 1 */}
             <div className="pdf-page-sheet w-full max-w-[780px] bg-white text-[#222222] shadow-xl p-8 sm:p-12 font-sans text-[13px] leading-[1.48] border border-gray-300">
