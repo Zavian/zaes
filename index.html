@@ -1,187 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>zaes.dev</title>
-<style>
-  :root {
-    --bg: #0a0e12;
-    --bg-raised: #10161c;
-    --text: #d7dee3;
-    --text-dim: #5c6b74;
-    --accent: #5fd0a8;
-    --accent-dim: #2c5a48;
-    --line: #1c252c;
-  }
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emanuele Sbabo | Web Developer (zaes.dev)</title>
+    <meta name="description" content="Personal homepage, portfolio, and project archive of Emanuele Sbabo: web developer, technical QA analyst, and tabletop RPG worldbuilder." />
+    <meta property="og:title" content="Emanuele Sbabo | zaes.dev" />
+    <meta property="og:description" content="Web developer, technical problem solver, and occasional RPG worldbuilder based in the Netherlands." />
 
-  * { box-sizing: border-box; }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: var(--bg);
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size: 40px 40px;
-    background-position: -1px -1px;
-  }
-
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .terminal {
-    width: min(680px, 90vw);
-    background: var(--bg-raised);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
-    overflow: hidden;
-  }
-
-  .titlebar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--line);
-    background: #0d1217;
-  }
-
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #2a333a;
-  }
-
-  .titlebar span.label {
-    margin-left: 8px;
-    font-size: 12px;
-    color: var(--text-dim);
-    letter-spacing: 0.02em;
-  }
-
-  .body {
-    padding: 28px 26px 32px;
-    font-size: 14px;
-    line-height: 1.75;
-    min-height: 260px;
-  }
-
-  .line { opacity: 0; animation: reveal 0.15s forwards; white-space: pre-wrap; }
-  .ok { color: var(--accent); }
-  .dim { color: var(--text-dim); }
-  .path { color: #e8c07d; }
-
-  .prompt::before {
-    content: "$ ";
-    color: var(--accent-dim);
-  }
-
-  .cursor {
-    display: inline-block;
-    width: 8px;
-    height: 15px;
-    background: var(--accent);
-    vertical-align: -2px;
-    margin-left: 6px;
-    animation: blink 1s steps(1) infinite;
-    opacity: 0;
-  }
-
-  @keyframes reveal {
-    to { opacity: 1; }
-  }
-
-  @keyframes blink {
-    0%, 49% { opacity: 1; }
-    50%, 100% { opacity: 0; }
-  }
-
-  footer {
-    padding: 14px 26px;
-    border-top: 1px solid var(--line);
-    font-size: 12px;
-    color: var(--text-dim);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  footer a { color: var(--text-dim); text-decoration: none; border-bottom: 1px dotted var(--line); }
-  footer a:hover { color: var(--accent); border-bottom-color: var(--accent-dim); }
-
-  @media (prefers-reduced-motion: reduce) {
-    .line { animation: none; opacity: 1; }
-    .cursor { animation: none; opacity: 1; }
-  }
-</style>
-</head>
-<body>
-
-  <div class="terminal">
-    <div class="titlebar">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <span class="label">zaes.dev — build</span>
-    </div>
-    <div class="body" id="log"></div>
-    <footer>
-      <span>status: <span style="color: var(--accent)">building</span></span>
-      <a href="mailto:hello@zaes.dev">hello@zaes.dev</a>
-    </footer>
-  </div>
-
-<script>
-  const lines = [
-    { text: "cloning zaes.dev", cls: "prompt" },
-    { text: "  → repository initialized", cls: "dim" },
-    { text: "installing foundations", cls: "prompt" },
-    { text: "  → domain      <span class='ok'>zaes.dev</span>", cls: "dim", html: true },
-    { text: "  → status      <span class='ok'>online, unfinished</span>", cls: "dim", html: true },
-    { text: "  → next up     <span class='path'>content, layout, everything</span>", cls: "dim", html: true },
-    { text: "", cls: "" },
-    { text: "this page is a placeholder. the real one is being built.", cls: "dim" },
-  ];
-
-  const log = document.getElementById("log");
-  let delay = 150;
-
-  lines.forEach((line, i) => {
-    const el = document.createElement("div");
-    el.className = "line " + (line.cls || "");
-    el.style.animationDelay = delay + "ms";
-    if (line.html) {
-      el.innerHTML = line.text;
-    } else {
-      el.textContent = line.text;
-    }
-    log.appendChild(el);
-    delay += line.text.length > 0 ? 260 : 120;
-  });
-
-  const cursorLine = document.createElement("div");
-  cursorLine.className = "line";
-  cursorLine.style.animationDelay = delay + "ms";
-  const cursorPrompt = document.createElement("span");
-  cursorPrompt.className = "prompt";
-  cursorLine.appendChild(cursorPrompt);
-  const cursor = document.createElement("span");
-  cursor.className = "cursor";
-  cursorLine.appendChild(cursor);
-  log.appendChild(cursorLine);
-
-  setTimeout(() => { cursor.style.opacity = "1"; }, delay + 200);
-</script>
-
-</body>
+    <meta property="og:type" content="website" />
+    <meta name="author" content="Emanuele Sbabo" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#FCFCFC] text-[#1A1A1A] antialiased selection:bg-[#E5E5E5] selection:text-[#1A1A1A]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
+

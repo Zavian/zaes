@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-primary: #FCFCFC;
+    --bg-surface: #FFFFFF;
+    --bg-surface-subtle: #F5F7F5;
+    --text-primary: #1A1A1A;
+    --text-secondary: #525252;
+    --text-muted: #737373;
+    --border-color: #E5E7EB;
+    --color-grass: #2D7A38;
+    --color-grass-hover: #22632C;
+    --color-grass-light: #EBF7EE;
+  }
+
+  .dark {
+    --bg-primary: #111318;
+    --bg-surface: #181A20;
+    --bg-surface-subtle: #1C221D;
+    --text-primary: #F3F4F6;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --border-color: #2E333D;
+    --color-grass: #34D399;
+    --color-grass-hover: #4ADE80;
+    --color-grass-light: #142E1B;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  code, pre, kbd, samp {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .font-serif {
+    font-family: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #C6D2C8;
+  border-radius: 2px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #2D3A30;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2D7A38;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #34D399;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide all non-printable elements */
+  .no-print,
+  header,
+  footer,
+  main,
+  #root > div > header,
+  #root > div > main,
+  #root > div > footer {
+    display: none !important;
+  }
+
+  /* Modal backdrop reset for print */
+  .cv-modal-backdrop {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .cv-modal-dialog {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+  }
+
+  .printable-cv-container {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  .pdf-page-sheet {
+    display: block !important;
+    width: 100% !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+  }
+
+  .pdf-page-break {
+    page-break-after: always !important;
+    break-after: page !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  a.print-link {
+    color: #0284c7 !important;
+    text-decoration: underline !important;
+  }
+}
