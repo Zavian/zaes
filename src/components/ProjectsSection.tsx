@@ -101,12 +101,18 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onSelectProjec
 
                   {/* Deep dive action button */}
                   <div className="pt-3 border-t border-gray-200 dark:border-[#2E333D] flex items-center justify-between">
-                    <button
-                      onClick={() => onSelectProject(project)}
+                    <a
+                      href={`/projects/${project.id}`}
+                      onClick={(e) => {
+                        // Let the browser handle new-tab / new-window clicks
+                        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        onSelectProject(project);
+                      }}
                       className="inline-flex items-center gap-2 text-sm font-medium text-emerald-800 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 transition-all cursor-pointer font-mono"
                     >
                       <span>{getActionLabel(project.id)}</span>
-                    </button>
+                    </a>
                     <span className="text-xs font-mono text-gray-400 dark:text-gray-500">
                       Detailed page available
                     </span>
