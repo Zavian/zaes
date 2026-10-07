@@ -14,11 +14,14 @@ import { ScrollToTopButton } from './components/ScrollToTopButton';
 import { TabletopToolsetView } from './components/project-views/TabletopToolsetView';
 import { RpgCardCreatorView } from './components/project-views/RpgCardCreatorView';
 import { AclorthView } from './components/project-views/AclorthView';
-import { projects } from './content/projects';
+import { pageTitle, resolveProject } from './seo';
 import { Project } from './types';
 
-function MainApp() {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+function MainApp({ initialPath }: { initialPath?: string }) {
+  // initialPath is given when prerendering in Node, where window does not exist
+  const [selectedProject, setSelectedProject] = useState<Project | null>(() =>
+    resolveProject(initialPath ?? window.location.pathname, initialPath ? '' : window.location.hash)
+  );
   const [cvOpen, setCvOpen] = useState(false);
 
   // Sync state with browser URL path and hash
@@ -27,19 +30,10 @@ function MainApp() {
     const hash = window.location.hash;
 
     // Check project path e.g. /projects/tabletop-toolset or hash #project/tabletop-toolset
-    let projectId: string | null = null;
-    if (path.startsWith('/projects/')) {
-      projectId = path.replace('/projects/', '').replace(/\/$/, '');
-    } else if (hash.startsWith('#project/')) {
-      projectId = hash.replace('#project/', '');
-    }
-
-    if (projectId) {
-      const found = projects.find((p) => p.id === projectId || (projectId === 'campaigns' && p.id === 'aclorth'));
-      if (found) {
-        setSelectedProject(found);
-        return;
-      }
+    const found = resolveProject(path, hash);
+    if (found) {
+      setSelectedProject(found);
+      return;
     }
 
     if (path === '/cv' || hash === '#cv') {
@@ -60,6 +54,11 @@ function MainApp() {
       window.removeEventListener('hashchange', syncRouteFromLocation);
     };
   }, [syncRouteFromLocation]);
+
+  // Keep the tab title in sync with the prerendered <title> of each route
+  useEffect(() => {
+    document.title = pageTitle(selectedProject);
+  }, [selectedProject]);
 
   // Navigate to a project page
   const handleSelectProject = (project: Project) => {
@@ -172,10 +171,10 @@ function MainApp() {
   );
 }
 
-export default function App() {
+export default function App({ initialPath }: { initialPath?: string }) {
   return (
     <ThemeProvider>
-      <MainApp />
+      <MainApp initialPath={initialPath} />
     </ThemeProvider>
   );
 }
