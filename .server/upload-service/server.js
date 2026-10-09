@@ -274,6 +274,41 @@ app.delete('/api/images/*', requireApiKey, (req, res) => {
   }
 });
 
+// Delete a folder and everything in it (subfolders included).
+// Returns what was removed so the gallery can say so.
+app.delete('/api/folders/*', requireApiKey, (req, res) => {
+  const folder = parseFolder(req.params[0]);
+  if (!folder) {
+    return res.status(400).json({ error: 'Invalid folder' });
+  }
+
+  const dirPath = path.join(UPLOAD_DIR, folder);
+  if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
+    return res.status(404).json({ error: 'Folder not found' });
+  }
+
+  try {
+    const removed = listImages(folder).length;
+    fs.rmSync(dirPath, { recursive: true, force: true });
+
+    for (const [hash, stored] of Object.entries(hashStore)) {
+      if (stored.startsWith(`${folder}/`)) delete hashStore[hash];
+    }
+    saveHashStore();
+
+    // Tidy up parents this left empty (never the root).
+    for (let dir = path.dirname(dirPath); dir !== UPLOAD_DIR; dir = path.dirname(dir)) {
+      if (fs.readdirSync(dir).length) break;
+      fs.rmdirSync(dir);
+    }
+
+    res.json({ success: true, folder, removed });
+  } catch (err) {
+    console.error('Folder delete error:', err);
+    res.status(500).json({ error: 'Failed to delete folder' });
+  }
+});
+
 // Multer error handler (file too big, wrong type, etc.)
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError || err.message === 'Only image files are allowed') {
