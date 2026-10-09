@@ -227,6 +227,31 @@
   .icon-btn:hover { color: var(--accent); border-color: var(--accent-dim); }
   .icon-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
 
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .crumbs a { color: var(--accent); cursor: pointer; text-decoration: none; }
+  .crumbs a:hover { text-decoration: underline; }
+  .crumbs .sep { color: var(--text-dim); }
+  .crumbs .here { color: var(--text); }
+
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin: 0 0 10px;
+  }
+  .grid + .section-label { margin-top: 24px; }
+
+  .folder-card { cursor: pointer; }
+  .folder-card .thumb-wrap { font-size: 56px; }
+  .folder-card:hover { border-color: var(--accent-dim); }
+
   .empty-state {
     text-align: center;
     padding: 80px 20px;
@@ -306,15 +331,20 @@
       <div class="brand"><span class="dot"></span> upload.zaes.dev</div>
       <div class="actions">
         <button class="btn" id="refreshBtn">Refresh</button>
+        <button class="btn" id="deleteFolderBtn" style="display:none;">Delete this folder</button>
         <button class="btn" id="lockBtn">Lock</button>
       </div>
     </header>
     <main>
       <div class="toolbar">
+        <span class="crumbs" id="crumbs"></span>
         <span id="countText">Loading…</span>
       </div>
+      <div class="section-label" id="foldersLabel" style="display:none;">Folders</div>
+      <div class="grid" id="folderGrid"></div>
+      <div class="section-label" id="imagesLabel" style="display:none;">Images</div>
       <div class="grid" id="grid"></div>
-      <div class="empty-state" id="emptyState" style="display:none;">No images uploaded yet.</div>
+      <div class="empty-state" id="emptyState" style="display:none;">This folder is empty.</div>
     </main>
   </div>
 
@@ -381,7 +411,7 @@
         <img src="${image.url}" alt="${image.filename}" loading="lazy">
       </div>
       <div class="card-body">
-        <div class="card-name" title="${image.filename}">${image.filename}</div>
+        <div class="card-name" title="${image.filename}">${image.filename.split('/').pop()}</div>
         <div class="card-meta">
           <span>${formatBytes(image.size)}</span>
           <span>${formatDate(image.uploadedAt)}</span>
@@ -407,7 +437,7 @@
     card.querySelector('[data-action="download"]').addEventListener('click', () => {
       const a = document.createElement('a');
       a.href = image.url;
-      a.download = image.filename;
+      a.download = image.filename.split('/').pop();
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -417,9 +447,9 @@
       if (!confirm(`Delete ${image.filename}? This can't be undone.`)) return;
       try {
         await apiFetch(`/api/images/${image.filename}`, { method: 'DELETE' });
-        card.remove();
+        allImages = allImages.filter((img) => img.filename !== image.filename);
         showToast('Deleted');
-        updateCount();
+        renderView();
       } catch (err) {
         showToast('Delete failed: ' + err.message);
       }
@@ -428,19 +458,136 @@
     return card;
   }
 
+  // ---------- Folder navigation ----------
+  // The current folder lives in the URL hash (#/map1/towers) so the back button
+  // and a reload both work. All images are fetched once; the view filters them.
+
+  const folderGrid = document.getElementById('folderGrid');
+  const foldersLabel = document.getElementById('foldersLabel');
+  const imagesLabel = document.getElementById('imagesLabel');
+  const crumbs = document.getElementById('crumbs');
+  const deleteFolderBtn = document.getElementById('deleteFolderBtn');
+
+  let allImages = [];
+  let currentFolder = '';
+
+  function folderFromHash() {
+    return decodeURIComponent(location.hash.replace(/^#\/?/, '')).replace(/\/+$/, '');
+  }
+
+  function goTo(folder) {
+    location.hash = folder ? '#/' + folder.split('/').map(encodeURIComponent).join('/') : '#/';
+  }
+
+  function inFolder(image, folder) {
+    return (image.folder || '') === folder;
+  }
+
+  function under(image, folder) {
+    return (image.folder || '') === folder || (image.folder || '').startsWith(folder + '/');
+  }
+
+  function renderCrumbs() {
+    crumbs.innerHTML = '';
+    const add = (label, folder, last) => {
+      if (crumbs.children.length) {
+        const sep = document.createElement('span');
+        sep.className = 'sep';
+        sep.textContent = '/';
+        crumbs.appendChild(sep);
+      }
+      const el = document.createElement(last ? 'span' : 'a');
+      el.textContent = label;
+      if (last) el.className = 'here';
+      else el.addEventListener('click', () => goTo(folder));
+      crumbs.appendChild(el);
+    };
+    const parts = currentFolder ? currentFolder.split('/') : [];
+    add('All images', '', parts.length === 0);
+    parts.forEach((part, i) => add(part, parts.slice(0, i + 1).join('/'), i === parts.length - 1));
+  }
+
+  async function deleteFolder(folder) {
+    const count = allImages.filter((img) => under(img, folder)).length;
+    const noun = count === 1 ? '1 image' : `${count} images`;
+    if (!confirm(`Delete folder "${folder}" and the ${noun} in it (subfolders included)? This can't be undone.`)) return;
+    try {
+      await apiFetch(`/api/folders/${folder.split('/').map(encodeURIComponent).join('/')}`, { method: 'DELETE' });
+      showToast(`Deleted ${folder}`);
+      // If we were inside the deleted folder, step out to its parent.
+      if (currentFolder === folder || currentFolder.startsWith(folder + '/')) {
+        goTo(folder.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : '');
+      }
+      await loadImages();
+    } catch (err) {
+      showToast('Delete failed: ' + err.message);
+    }
+  }
+
+  function renderFolderCard(folder) {
+    const name = folder.split('/').pop();
+    const count = allImages.filter((img) => under(img, folder)).length;
+    const card = document.createElement('div');
+    card.className = 'card folder-card';
+    card.innerHTML = `
+      <div class="thumb-wrap">📁</div>
+      <div class="card-body">
+        <div class="card-name" title="${folder}">${name}</div>
+        <div class="card-meta"><span>${count === 1 ? '1 image' : count + ' images'}</span></div>
+        <div class="card-actions">
+          <button class="icon-btn" data-action="open">Open</button>
+          <button class="icon-btn danger" data-action="delete">Delete folder</button>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => goTo(folder));
+    card.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteFolder(folder);
+    });
+    return card;
+  }
+
   function updateCount() {
     const n = grid.children.length;
-    countText.textContent = n === 1 ? '1 image' : `${n} images`;
-    emptyState.style.display = n === 0 ? 'block' : 'none';
+    const f = folderGrid.children.length;
+    const parts = [];
+    if (f) parts.push(f === 1 ? '1 folder' : `${f} folders`);
+    parts.push(n === 1 ? '1 image' : `${n} images`);
+    countText.textContent = parts.join(', ');
+    emptyState.style.display = n === 0 && f === 0 ? 'block' : 'none';
+    foldersLabel.style.display = f ? 'block' : 'none';
+    imagesLabel.style.display = n && f ? 'block' : 'none';
+  }
+
+  function renderView() {
+    currentFolder = folderFromHash();
+    renderCrumbs();
+    deleteFolderBtn.style.display = currentFolder ? '' : 'none';
+
+    // Direct subfolders of the current folder, derived from every image beneath it.
+    const prefix = currentFolder ? currentFolder + '/' : '';
+    const subfolders = new Set();
+    for (const img of allImages) {
+      const f = img.folder || '';
+      if (f.startsWith(prefix) && f !== currentFolder) {
+        subfolders.add(prefix + f.slice(prefix.length).split('/')[0]);
+      }
+    }
+
+    folderGrid.innerHTML = '';
+    [...subfolders].sort().forEach((f) => folderGrid.appendChild(renderFolderCard(f)));
+    grid.innerHTML = '';
+    allImages.filter((img) => inFolder(img, currentFolder)).forEach((img) => grid.appendChild(renderCard(img)));
+    updateCount();
   }
 
   async function loadImages() {
     countText.textContent = 'Loading…';
     try {
       const data = await apiFetch('/api/images');
-      grid.innerHTML = '';
-      data.images.forEach((img) => grid.appendChild(renderCard(img)));
-      updateCount();
+      allImages = data.images;
+      renderView();
     } catch (err) {
       if (err.message === 'UNAUTHORIZED') {
         lock('Key rejected by server.');
@@ -449,6 +596,9 @@
       countText.textContent = 'Failed to load: ' + err.message;
     }
   }
+
+  window.addEventListener('hashchange', () => { if (apiKey) renderView(); });
+  deleteFolderBtn.addEventListener('click', () => deleteFolder(currentFolder));
 
   function unlock() {
     gate.style.display = 'none';

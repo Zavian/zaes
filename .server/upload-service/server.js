@@ -80,9 +80,56 @@ function requireApiKey(req, res, next) {
   next();
 }
 
-// Only allow plain filenames (no path traversal via ../ etc.)
-function isSafeFilename(name) {
-  return typeof name === 'string' && /^[a-zA-Z0-9_-]+\.webp$/.test(name);
+// --- Folders and named files ---------------------------------------------
+// A folder is up to MAX_FOLDER_DEPTH segments of [a-zA-Z0-9_-], joined by "/".
+// Validated, never sanitised: anything outside the alphabet is refused, so there
+// is no traversal to get past. A "name" gives a file a stable path
+// (<folder>/<name>.webp) that uploads overwrite in place -- same URL, new bytes.
+const MAX_FOLDER_DEPTH = 3;
+const SEGMENT = /^[a-zA-Z0-9_-]{1,64}$/;
+
+// Returns '' (root), a clean "a/b" string, or null when invalid.
+function parseFolder(raw) {
+  if (raw === undefined || raw === null || raw === '') return '';
+  if (typeof raw !== 'string') return null;
+  const parts = raw.split('/');
+  if (parts.length > MAX_FOLDER_DEPTH || !parts.every((p) => SEGMENT.test(p))) return null;
+  return parts.join('/');
+}
+
+// Returns a validated name (no extension) or null when invalid; undefined -> ''.
+function parseName(raw) {
+  if (raw === undefined || raw === null || raw === '') return '';
+  return typeof raw === 'string' && SEGMENT.test(raw) ? raw : null;
+}
+
+// A stored file's path relative to UPLOAD_DIR: "file.webp" or "a/b/file.webp".
+function isSafeRelPath(rel) {
+  if (typeof rel !== 'string') return false;
+  const parts = rel.split('/');
+  const file = parts.pop();
+  return parts.length <= MAX_FOLDER_DEPTH
+    && parts.every((p) => SEGMENT.test(p))
+    && /^[a-zA-Z0-9_-]+\.webp$/.test(file);
+}
+
+function dropHashesFor(rel) {
+  for (const [hash, stored] of Object.entries(hashStore)) {
+    if (stored === rel) delete hashStore[hash];
+  }
+}
+
+function listImages(dir = '') {
+  const out = [];
+  for (const entry of fs.readdirSync(path.join(UPLOAD_DIR, dir), { withFileTypes: true })) {
+    const rel = dir ? `${dir}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...listImages(rel));
+    else if (entry.name.toLowerCase().endsWith('.webp')) {
+      const stat = fs.statSync(path.join(UPLOAD_DIR, rel));
+      out.push({ filename: rel, folder: dir, url: `${PUBLIC_BASE_URL}/i/${rel}`, size: stat.size, uploadedAt: stat.mtime });
+    }
+  }
+  return out;
 }
 
 function hashBuffer(buffer) {
@@ -107,44 +154,69 @@ app.post('/upload', requireApiKey, upload.single('file'), async (req, res) => {
     return res.status(400).json({ error: 'No file uploaded (expected field name "file")' });
   }
 
+  // folder / name come from the form fields or, for simple clients, the query.
+  const folder = parseFolder(req.body?.folder ?? req.query.folder);
+  const name = parseName(req.body?.name ?? req.query.name);
+  if (folder === null) {
+    return res.status(400).json({ error: `Invalid folder (up to ${MAX_FOLDER_DEPTH} segments of letters, digits, _ or -, joined by /)` });
+  }
+  if (name === null) {
+    return res.status(400).json({ error: 'Invalid name (letters, digits, _ or - only; no extension)' });
+  }
+
   try {
     const contentHash = hashBuffer(req.file.buffer);
-    const existingFilename = hashStore[contentHash];
+    const prefix = folder ? `${folder}/` : '';
+    // Dedupe is per folder, so the same bytes in two folders are two files.
+    const hashKey = folder ? `${folder}:${contentHash}` : contentHash;
 
-    // If we've seen these exact bytes before AND the file is still on disk,
-    // just hand back the existing URL instead of storing a duplicate.
-    if (existingFilename) {
-      const existingPath = path.join(UPLOAD_DIR, existingFilename);
-      if (fs.existsSync(existingPath)) {
-        return res.json({
-          success: true,
-          duplicate: true,
-          url: `${PUBLIC_BASE_URL}/i/${existingFilename}`,
-          filename: existingFilename,
-          size: fs.statSync(existingPath).size,
-        });
+    // Unnamed upload: if these exact bytes are already stored here, hand back the
+    // existing URL. A named upload never dedupes -- it targets one specific path.
+    if (!name) {
+      const existing = hashStore[hashKey];
+      if (existing) {
+        const existingPath = path.join(UPLOAD_DIR, existing);
+        if (fs.existsSync(existingPath)) {
+          return res.json({
+            success: true,
+            duplicate: true,
+            updated: false,
+            url: `${PUBLIC_BASE_URL}/i/${existing}`,
+            filename: existing,
+            folder,
+            size: fs.statSync(existingPath).size,
+          });
+        }
+        // Stale entry (file was deleted via the gallery) -- re-create it.
+        delete hashStore[hashKey];
       }
-      // Stale entry (file was deleted via the gallery) — fall through and re-create it.
-      delete hashStore[contentHash];
     }
 
-    const filename = `${crypto.randomBytes(8).toString('hex')}.webp`;
+    const filename = `${prefix}${name || crypto.randomBytes(8).toString('hex')}.webp`;
     const outputPath = path.join(UPLOAD_DIR, filename);
+    const existed = fs.existsSync(outputPath);
 
-    await sharp(req.file.buffer)
-      .webp({ quality: 85 })
-      .toFile(outputPath);
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    // Write beside, then rename: a reader never sees a half-written file.
+    const tmpPath = `${outputPath}.${crypto.randomBytes(4).toString('hex')}.tmp`;
+    await sharp(req.file.buffer).webp({ quality: 85 }).toFile(tmpPath);
+    fs.renameSync(tmpPath, outputPath);
 
-    hashStore[contentHash] = filename;
+    dropHashesFor(filename);
+    hashStore[hashKey] = filename;
     saveHashStore();
 
-    const url = `${PUBLIC_BASE_URL}/i/${filename}`;
+    // Static files are served immutable for 30 days, so an overwritten file needs a
+    // new URL to be seen: the content hash rides along as ?v=.
+    const url = `${PUBLIC_BASE_URL}/i/${filename}${name ? `?v=${contentHash.slice(0, 10)}` : ''}`;
 
     res.json({
       success: true,
       duplicate: false,
+      updated: Boolean(name) && existed,
       url,
       filename,
+      folder,
       size: fs.statSync(outputPath).size,
     });
   } catch (err) {
@@ -156,20 +228,11 @@ app.post('/upload', requireApiKey, upload.single('file'), async (req, res) => {
 // List all stored images — newest first
 app.get('/api/images', requireApiKey, (req, res) => {
   try {
-    const files = fs.readdirSync(UPLOAD_DIR)
-      .filter((f) => f.toLowerCase().endsWith('.webp'))
-      .map((filename) => {
-        const stat = fs.statSync(path.join(UPLOAD_DIR, filename));
-        return {
-          filename,
-          url: `${PUBLIC_BASE_URL}/i/${filename}`,
-          size: stat.size,
-          uploadedAt: stat.mtime,
-        };
-      })
+    const files = listImages()
       .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+    const folders = [...new Set(files.map((f) => f.folder).filter(Boolean))].sort();
 
-    res.json({ success: true, count: files.length, images: files });
+    res.json({ success: true, count: files.length, folders, images: files });
   } catch (err) {
     console.error('List error:', err);
     res.status(500).json({ error: 'Failed to list images' });
@@ -177,10 +240,10 @@ app.get('/api/images', requireApiKey, (req, res) => {
 });
 
 // Delete a single image by filename
-app.delete('/api/images/:filename', requireApiKey, (req, res) => {
-  const { filename } = req.params;
+app.delete('/api/images/*', requireApiKey, (req, res) => {
+  const filename = req.params[0];
 
-  if (!isSafeFilename(filename)) {
+  if (!isSafeRelPath(filename)) {
     return res.status(400).json({ error: 'Invalid filename' });
   }
 
@@ -195,18 +258,54 @@ app.delete('/api/images/:filename', requireApiKey, (req, res) => {
 
     // Free up the hash entry so re-uploading the same bytes later
     // creates a fresh file instead of silently "succeeding" with nothing there.
-    for (const [hash, storedFilename] of Object.entries(hashStore)) {
-      if (storedFilename === filename) {
-        delete hashStore[hash];
-        break;
-      }
-    }
+    dropHashesFor(filename);
     saveHashStore();
+
+    // Tidy up a folder this left empty (never the root).
+    for (let dir = path.dirname(filePath); dir !== UPLOAD_DIR; dir = path.dirname(dir)) {
+      if (fs.readdirSync(dir).length) break;
+      fs.rmdirSync(dir);
+    }
 
     res.json({ success: true, filename });
   } catch (err) {
     console.error('Delete error:', err);
     res.status(500).json({ error: 'Failed to delete file' });
+  }
+});
+
+// Delete a folder and everything in it (subfolders included).
+// Returns what was removed so the gallery can say so.
+app.delete('/api/folders/*', requireApiKey, (req, res) => {
+  const folder = parseFolder(req.params[0]);
+  if (!folder) {
+    return res.status(400).json({ error: 'Invalid folder' });
+  }
+
+  const dirPath = path.join(UPLOAD_DIR, folder);
+  if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
+    return res.status(404).json({ error: 'Folder not found' });
+  }
+
+  try {
+    const removed = listImages(folder).length;
+    fs.rmSync(dirPath, { recursive: true, force: true });
+
+    for (const [hash, stored] of Object.entries(hashStore)) {
+      if (stored.startsWith(`${folder}/`)) delete hashStore[hash];
+    }
+    saveHashStore();
+
+    // Tidy up parents this left empty (never the root).
+    for (let dir = path.dirname(dirPath); dir !== UPLOAD_DIR; dir = path.dirname(dir)) {
+      if (fs.readdirSync(dir).length) break;
+      fs.rmdirSync(dir);
+    }
+
+    res.json({ success: true, folder, removed });
+  } catch (err) {
+    console.error('Folder delete error:', err);
+    res.status(500).json({ error: 'Failed to delete folder' });
   }
 });
 
