@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>upload.zaes.dev</title>
+<style>
+  :root {
+    --bg: #0a0e12;
+    --bg-raised: #10161c;
+    --bg-card: #131a21;
+    --text: #d7dee3;
+    --text-dim: #5c6b74;
+    --accent: #5fd0a8;
+    --accent-dim: #2c5a48;
+    --danger: #e0685f;
+    --danger-dim: #4a2b28;
+    --line: #1c252c;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+  }
+
+  body {
+    font-family: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Key gate ---------- */
+
+  #gate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .gate-box {
+    width: min(420px, 100%);
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 28px;
+  }
+
+  .gate-box h1 {
+    font-size: 15px;
+    margin: 0 0 4px;
+    color: var(--text);
+  }
+
+  .gate-box p {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0 0 20px;
+    line-height: 1.6;
+  }
+
+  input[type="password"], input[type="text"] {
+    width: 100%;
+    background: #0d1217;
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 5px;
+    outline: none;
+  }
+
+  input:focus { border-color: var(--accent-dim); }
+
+  .btn {
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid var(--line);
+    background: var(--bg-card);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .btn:active { transform: translateY(1px); }
+
+  .btn-primary {
+    background: var(--accent-dim);
+    border-color: var(--accent-dim);
+    color: #d9fbee;
+  }
+  .btn-primary:hover { border-color: var(--accent); color: #fff; }
+
+  .btn-danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  .gate-row { display: flex; gap: 8px; margin-top: 14px; }
+  .gate-row input { flex: 1; }
+
+  .error-text {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  /* ---------- Gallery ---------- */
+
+  #app { display: none; }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: rgba(10,14,18,0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  header .brand {
+    font-size: 13px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  header .brand .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+  }
+
+  header .actions { display: flex; gap: 8px; }
+
+  main {
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .thumb-wrap {
+    aspect-ratio: 1;
+    background:
+      linear-gradient(45deg, #0d1217 25%, transparent 25%) -8px 0/16px 16px,
+      linear-gradient(-45deg, #0d1217 25%, transparent 25%) -8px 0/16px 16px,
+      linear-gradient(45deg, transparent 75%, #0d1217 75%) -8px 0/16px 16px,
+      linear-gradient(-45deg, transparent 75%, #0d1217 75%) -8px 0/16px 16px,
+      #0f1419;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .thumb-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: zoom-in;
+  }
+
+  .card-body {
+    padding: 10px 12px 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .card-name {
+    color: var(--text);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+
+  .card-meta { display: flex; justify-content: space-between; margin-bottom: 10px; }
+
+  .card-actions { display: flex; gap: 6px; }
+
+  .icon-btn {
+    flex: 1;
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 11px;
+    padding: 6px 0;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .icon-btn:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .icon-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  /* ---------- Lightbox ---------- */
+
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,7,9,0.92);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    cursor: zoom-out;
+  }
+
+  #lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 6px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  /* ---------- Toast ---------- */
+
+  #toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--bg-card);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    font-size: 12px;
+    padding: 10px 18px;
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 200;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 560px) {
+    main { padding: 16px; }
+    header { padding: 14px 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Key entry gate -->
+  <div id="gate">
+    <div class="gate-box">
+      <h1>upload.zaes.dev</h1>
+      <p>Enter your API key to view and manage stored images.</p>
+      <div class="gate-row">
+        <input type="password" id="keyInput" placeholder="API key" autocomplete="off">
+        <button class="btn btn-primary" id="unlockBtn">Unlock</button>
+      </div>
+      <div class="error-text" id="gateError"></div>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div id="app">
+    <header>
+      <div class="brand"><span class="dot"></span> upload.zaes.dev</div>
+      <div class="actions">
+        <button class="btn" id="refreshBtn">Refresh</button>
+        <button class="btn" id="lockBtn">Lock</button>
+      </div>
+    </header>
+    <main>
+      <div class="toolbar">
+        <span id="countText">Loading…</span>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="empty-state" id="emptyState" style="display:none;">No images uploaded yet.</div>
+    </main>
+  </div>
+
+  <div id="lightbox"><img id="lightboxImg" src="" alt=""></div>
+  <div id="toast"></div>
+
+<script>
+  const STORAGE_KEY = 'zaes_upload_api_key';
+  const gate = document.getElementById('gate');
+  const app = document.getElementById('app');
+  const keyInput = document.getElementById('keyInput');
+  const gateError = document.getElementById('gateError');
+  const grid = document.getElementById('grid');
+  const countText = document.getElementById('countText');
+  const emptyState = document.getElementById('emptyState');
+  const toast = document.getElementById('toast');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+
+  let apiKey = localStorage.getItem(STORAGE_KEY) || '';
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
+      ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(path, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+    if (res.status === 401) {
+      throw new Error('UNAUTHORIZED');
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Request failed (${res.status})`);
+    }
+    return res.json();
+  }
+
+  function renderCard(image) {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    card.innerHTML = `
+      <div class="thumb-wrap">
+        <img src="${image.url}" alt="${image.filename}" loading="lazy">
+      </div>
+      <div class="card-body">
+        <div class="card-name" title="${image.filename}">${image.filename}</div>
+        <div class="card-meta">
+          <span>${formatBytes(image.size)}</span>
+          <span>${formatDate(image.uploadedAt)}</span>
+        </div>
+        <div class="card-actions">
+          <button class="icon-btn" data-action="copy">Copy</button>
+          <button class="icon-btn" data-action="download">Download</button>
+          <button class="icon-btn danger" data-action="delete">Delete</button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector('.thumb-wrap img').addEventListener('click', () => {
+      lightboxImg.src = image.url;
+      lightbox.style.display = 'flex';
+    });
+
+    card.querySelector('[data-action="copy"]').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(image.url);
+      showToast('URL copied');
+    });
+
+    card.querySelector('[data-action="download"]').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = image.url;
+      a.download = image.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+
+    card.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+      if (!confirm(`Delete ${image.filename}? This can't be undone.`)) return;
+      try {
+        await apiFetch(`/api/images/${image.filename}`, { method: 'DELETE' });
+        card.remove();
+        showToast('Deleted');
+        updateCount();
+      } catch (err) {
+        showToast('Delete failed: ' + err.message);
+      }
+    });
+
+    return card;
+  }
+
+  function updateCount() {
+    const n = grid.children.length;
+    countText.textContent = n === 1 ? '1 image' : `${n} images`;
+    emptyState.style.display = n === 0 ? 'block' : 'none';
+  }
+
+  async function loadImages() {
+    countText.textContent = 'Loading…';
+    try {
+      const data = await apiFetch('/api/images');
+      grid.innerHTML = '';
+      data.images.forEach((img) => grid.appendChild(renderCard(img)));
+      updateCount();
+    } catch (err) {
+      if (err.message === 'UNAUTHORIZED') {
+        lock('Key rejected by server.');
+        return;
+      }
+      countText.textContent = 'Failed to load: ' + err.message;
+    }
+  }
+
+  function unlock() {
+    gate.style.display = 'none';
+    app.style.display = 'block';
+    loadImages();
+  }
+
+  function lock(errorMsg) {
+    localStorage.removeItem(STORAGE_KEY);
+    apiKey = '';
+    app.style.display = 'none';
+    gate.style.display = 'flex';
+    gateError.textContent = errorMsg || '';
+    keyInput.value = '';
+    keyInput.focus();
+  }
+
+  document.getElementById('unlockBtn').addEventListener('click', async () => {
+    const val = keyInput.value.trim();
+    if (!val) return;
+    apiKey = val;
+    gateError.textContent = '';
+    try {
+      await apiFetch('/api/images');
+      localStorage.setItem(STORAGE_KEY, apiKey);
+      unlock();
+    } catch (err) {
+      gateError.textContent = err.message === 'UNAUTHORIZED' ? 'Invalid API key.' : err.message;
+    }
+  });
+
+  keyInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('unlockBtn').click();
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', loadImages);
+  document.getElementById('lockBtn').addEventListener('click', () => lock());
+
+  lightbox.addEventListener('click', () => { lightbox.style.display = 'none'; });
+
+  // Auto-unlock if a key is already stored
+  if (apiKey) {
+    unlock();
+  }
+</script>
+
+</body>
+</html>
