@@ -7,29 +7,12 @@ import { DeckPanel } from './ui/DeckPanel';
 import { ExportPanel } from './ui/ExportPanel';
 import { Preview } from './ui/Preview';
 import { DeckActions } from './ui/DeckActions';
-import { OldSaveDialog } from './ui/OldSaveDialog';
 import { SettingsPanel } from './ui/SettingsPanel';
 import { CodeDialog, HelpDialog, ImportCardDialog } from './ui/dialogs';
 import { Button, Panel } from './ui/primitives';
 import { useDeck } from './ui/useDeck';
 
 const CARD_FONTS = 'https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap';
-
-const OLD_SAVE_KEY = 'zaes_old_save_prompted';
-const oldSavePrompted = () => {
-  try {
-    return localStorage.getItem(OLD_SAVE_KEY) === '1';
-  } catch {
-    return true; // cannot remember the answer, so do not nag
-  }
-};
-const markOldSavePrompted = () => {
-  try {
-    localStorage.setItem(OLD_SAVE_KEY, '1');
-  } catch {
-    /* ignore */
-  }
-};
 
 const typingInField = (target: EventTarget | null) => {
   const el = target as HTMLElement | null;
@@ -53,7 +36,7 @@ function useWideScreen() {
 export default function GeneratorPage() {
   const deck = useDeck();
   const { cards, options, current } = deck;
-  const [dialog, setDialog] = useState<null | 'oldsave' | 'import' | 'help' | 'sort' | 'filter'>(null);
+  const [dialog, setDialog] = useState<null | 'import' | 'help' | 'sort' | 'filter'>(null);
   const [uploadSignal, setUploadSignal] = useState(0);
   const wide = useWideScreen();
   const [toast, setToast] = useState('');
@@ -100,12 +83,6 @@ export default function GeneratorPage() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, [deck.cards]);
-
-  // First visit with an empty deck: offer to bring over a deck saved in the old generator (asked once).
-  useEffect(() => {
-    if (deck.ready && deck.cards.length === 0 && !oldSavePrompted()) setDialog('oldsave');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deck.ready]);
 
   const dialogRef = useRef(dialog);
   dialogRef.current = dialog;
@@ -176,7 +153,6 @@ export default function GeneratorPage() {
             onSort={() => setDialog('sort')}
             onFilter={() => setDialog('filter')}
             onHelp={() => setDialog('help')}
-            onOldSave={() => setDialog('oldsave')}
             onClear={() => cards.length && confirm(`Delete all ${cards.length} cards? This cannot be undone.`) && deck.clear()}
           />
           <DeckPanel deck={deck} onImportJson={() => setDialog('import')} />
@@ -220,17 +196,6 @@ export default function GeneratorPage() {
         </div>
       )}
 
-      <OldSaveDialog
-        open={dialog === 'oldsave'}
-        onClose={() => {
-          markOldSavePrompted();
-          setDialog(null);
-        }}
-        onLoad={(c) => {
-          deck.addCards(c);
-          notify(`Loaded ${c.length} card${c.length === 1 ? '' : 's'} from the old generator.`);
-        }}
-      />
       <ImportCardDialog open={dialog === 'import'} onClose={() => setDialog(null)} onImport={(c) => { deck.addCards(c.map(cleanImportedCard)); notify(`Imported ${c.length} card${c.length === 1 ? '' : 's'}.`); }} />
       <CodeDialog open={dialog === 'sort' || dialog === 'filter'} mode={dialog === 'filter' ? 'filter' : 'sort'} onClose={() => setDialog(null)} cards={cards} onResult={deck.replaceCards} />
       <HelpDialog open={dialog === 'help'} onClose={() => setDialog(null)} />

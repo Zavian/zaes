@@ -10,11 +10,10 @@ interface Props {
   onSort: () => void;
   onFilter: () => void;
   onHelp: () => void;
-  onOldSave: () => void;
   onClear: () => void;
 }
 
-export const DeckActions: React.FC<Props> = ({ cardCount, onLoad, onSave, onSample, onSort, onFilter, onHelp, onOldSave, onClear }) => {
+export const DeckActions: React.FC<Props> = ({ cardCount, onLoad, onSave, onSample, onSort, onFilter, onHelp, onClear }) => {
   const [open, setOpen] = useState(true);
   return (
   <Panel
@@ -32,7 +31,6 @@ export const DeckActions: React.FC<Props> = ({ cardCount, onLoad, onSave, onSamp
       <Button onClick={onSort} disabled={cardCount < 2}><ArrowDownAZ className="w-3.5 h-3.5" /> Sort</Button>
       <Button onClick={onFilter} disabled={!cardCount}><Filter className="w-3.5 h-3.5" /> Filter</Button>
       <Button onClick={onHelp} aria-label="Help (F1)" title="Help (F1)"><CircleHelp className="w-3.5 h-3.5" /> Help</Button>
-      <Button className="col-span-3" onClick={onOldSave} title="Copy the deck saved in the old generator">Import from old generator</Button>
       <Button variant="danger" className="col-span-3" onClick={onClear} disabled={!cardCount} title="Delete all cards">
         <Trash2 className="w-3.5 h-3.5" /> Delete all cards
       </Button>
