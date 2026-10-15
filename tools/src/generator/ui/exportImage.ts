@@ -65,7 +65,10 @@ async function prescaleIcons(host: HTMLElement, scale: number) {
     const key = `${url}@${size}`;
     if (!cache.has(key)) cache.set(key, loadImage(url).then((img) => downscale(img, size)));
     try {
-      el.style.setProperty('--icon', `url('${await cache.get(key)}')`);
+      // html2canvas does not resolve var() in background-image, so set it directly as well.
+      const icon = `url('${await cache.get(key)}')`;
+      el.style.setProperty('--icon', icon);
+      el.style.backgroundImage = icon;
     } catch {
       /* keep the original icon if it cannot be read */
     }
@@ -75,10 +78,9 @@ async function prescaleIcons(host: HTMLElement, scale: number) {
 
 // Render a card's HTML at natural size, off-screen, so the result is crisp regardless of preview scaling.
 export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLCanvasElement> {
-  // html-to-image lets the browser itself draw the card (as an SVG foreignObject), so text, gradients and the
-  // 512px icons come out exactly as in the preview and at full resolution; html2canvas re-implements CSS and
-  // draws background images at 1x.
-  const [{ toCanvas }] = await Promise.all([import('html-to-image'), preloadIcons(html), document.fonts?.ready]);
+  // html2canvas paints the card from the live layout, so line wrapping and spacing match the preview (and the
+  // original generator); icons are pre-scaled below because it draws background images at their given size.
+  const [{ default: html2canvas }] = await Promise.all([import('html2canvas'), preloadIcons(html), document.fonts?.ready]);
   const host = document.createElement('div');
   host.style.cssText = 'position:fixed;left:-100000px;top:0;pointer-events:none;';
   host.innerHTML = html;
@@ -86,8 +88,19 @@ export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLC
   try {
     fitTitles(host);
     await prescaleIcons(host, scale);
+    // html2canvas drops the tapered rule SVGs; an <img> of the same SVG is drawn reliably.
+    host.querySelectorAll<SVGElement>('svg.card-ruler').forEach((svg) => {
+      const box = svg.getBoundingClientRect();
+      svg.setAttribute('width', String(box.width));
+      svg.setAttribute('height', String(box.height));
+      const img = document.createElement('img');
+      img.className = svg.getAttribute('class') ?? '';
+      img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`;
+      img.style.cssText = `width:${box.width}px;height:${box.height}px`;
+      svg.replaceWith(img);
+    });
     const el = host.firstElementChild as HTMLElement;
-    return await toCanvas(el, { pixelRatio: scale });
+    return await html2canvas(el, { scale, backgroundColor: null, useCORS: true, logging: false });
   } finally {
     host.remove();
   }
