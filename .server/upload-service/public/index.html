@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>upload.zaes.dev</title>
@@ -186,6 +190,7 @@
     overflow: hidden;
   }
 
+  .file-tile { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font: 700 28px monospace; color: inherit; text-decoration: none; opacity: .75; }
   .thumb-wrap img {
     width: 100%;
     height: 100%;
@@ -406,10 +411,12 @@
   function renderCard(image) {
     const card = document.createElement('div');
     card.className = 'card';
+    const ext = image.filename.split('.').pop().toLowerCase();
+    const isImage = ext === 'webp' || ext === 'png';
 
     card.innerHTML = `
       <div class="thumb-wrap">
-        <img src="${image.url}" alt="${image.filename}" loading="lazy">
+        ${isImage ? `<img src="${image.url}" alt="${image.filename}" loading="lazy">` : `<a class="file-tile" href="${image.url}" target="_blank" rel="noopener">${ext.toUpperCase()}</a>`}
       </div>
       <div class="card-body">
         <div class="card-name" title="${image.filename}">${image.filename.split('/').pop()}</div>
@@ -425,7 +432,7 @@
       </div>
     `;
 
-    card.querySelector('.thumb-wrap img').addEventListener('click', () => {
+    card.querySelector('.thumb-wrap img')?.addEventListener('click', () => {
       lightboxImg.src = image.url;
       lightbox.style.display = 'flex';
     });

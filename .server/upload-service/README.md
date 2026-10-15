@@ -1,6 +1,6 @@
 # upload.zaes.dev
 
-Small image host. Uploads are converted (WebP by default, PNG with `format=png`) and served from `/i/...`.
+Small file host. Images are converted (WebP by default, PNG with `format=png`); PDF, txt, md, json and csv files are stored as they are (content is checked: `%PDF-` header, UTF-8 text). Everything is served from `/i/...`; text types are served as text with `nosniff` and a sandbox CSP.
 
 ## Keys
 
