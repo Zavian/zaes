@@ -26,7 +26,16 @@ export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLC
   try {
     fitTitles(host);
     const el = host.firstElementChild as HTMLElement;
-    return await html2canvas(el, { scale, useCORS: true, logging: false });
+    // Render at double size and scale down: html2canvas draws the 512px icons with a plain nearest-ish resample,
+    // so supersampling gives clean edges.
+    const big = await html2canvas(el, { scale: scale * 2, useCORS: true, logging: false, backgroundColor: null });
+    const out = document.createElement('canvas');
+    out.width = Math.round(big.width / 2);
+    out.height = Math.round(big.height / 2);
+    const ctx = out.getContext('2d')!;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(big, 0, 0, out.width, out.height);
+    return out;
   } finally {
     host.remove();
   }

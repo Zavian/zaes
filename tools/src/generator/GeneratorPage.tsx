@@ -35,7 +35,6 @@ export default function GeneratorPage() {
   const [uploadSignal, setUploadSignal] = useState(0);
   const wide = useWideScreen();
   const [toast, setToast] = useState('');
-  const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const toastTimer = useRef<number | undefined>(undefined);
@@ -103,22 +102,7 @@ export default function GeneratorPage() {
   };
 
   return (
-    <div
-      className="max-w-[2200px] mx-auto px-4 sm:px-6 py-3 no-print lg:h-[calc(100dvh-3.5rem)] lg:flex lg:flex-col"
-      onDragOver={(e) => {
-        if (e.dataTransfer.types.includes('Files')) {
-          e.preventDefault();
-          setDragging(true);
-        }
-      }}
-      onDragLeave={(e) => e.currentTarget === e.target && setDragging(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDragging(false);
-        if (e.dataTransfer.files.length) void loadFiles(e.dataTransfer.files);
-      }}
-    >
-
+    <div className="max-w-[2200px] mx-auto px-4 sm:px-6 py-3 no-print lg:h-[calc(100dvh-3.5rem)] lg:flex lg:flex-col">
       <div className="mb-3 shrink-0 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
           <h1 className="text-xl font-bold text-[#1A1A1A] dark:text-[#F3F4F6]">RPG Card Generator</h1>
@@ -184,7 +168,6 @@ export default function GeneratorPage() {
                   <Button onClick={() => fileInput.current?.click()}>Load a file</Button>
                   <Button onClick={addSample}>Add sample deck</Button>
                 </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500">You can also drop a .json save file anywhere on this page.</p>
               </div>
             </Panel>
           )}
@@ -203,12 +186,6 @@ export default function GeneratorPage() {
           </aside>
         )}
       </div>
-
-      {dragging && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-emerald-700/20 backdrop-blur-xs pointer-events-none">
-          <div className="rounded border-2 border-dashed border-emerald-600 bg-white dark:bg-[#181A20] px-8 py-6 font-mono text-sm text-emerald-700 dark:text-emerald-400">Drop a save file to load it</div>
-        </div>
-      )}
 
       {toast && (
         <div role="status" className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[90vw] rounded border border-gray-200 dark:border-[#2E333D] bg-white dark:bg-[#181A20] px-4 py-2 text-sm shadow-lg text-gray-700 dark:text-gray-200">
