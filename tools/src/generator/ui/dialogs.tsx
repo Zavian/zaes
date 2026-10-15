@@ -2,89 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { BBCODES } from '../core/bbcode';
 import { DeckParseError, parseDeck } from '../core/normalize';
 import { FS_NOTE, TAG_DOCS } from '../core/tags';
-import { Arrangement, Card, DeckOptions, PAGE_SIZES, PageSize } from '../core/types';
+import { Card } from '../core/types';
 import { Button, Input, Kbd, Label, Modal, Select, Textarea, Toggle, cx } from './primitives';
-import { deckCardCount, fitGrid, gridOverflows } from '../core/pages';
-
-// ---------------------------------------------------------------------------
-// Print
-// ---------------------------------------------------------------------------
-interface PrintProps {
-  open: boolean;
-  onClose: () => void;
-  onPrint: () => void;
-  options: DeckOptions;
-  setOptions: (patch: Partial<DeckOptions>) => void;
-  cards: Card[];
-}
-
-export const PrintDialog: React.FC<PrintProps> = ({ open, onClose, onPrint, options, setOptions, cards }) => {
-  const total = deckCardCount(cards, options);
-  const perPage = options.page_rows * options.page_columns;
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Print cards"
-      footer={
-        <>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" disabled={cards.length === 0} onClick={onPrint}>Print…</Button>
-        </>
-      }
-    >
-      <div className="space-y-5">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="page-size">Page size</Label>
-            <Select id="page-size" value={options.page_size} onChange={(e) => setOptions({ page_size: e.target.value as PageSize })}>
-              {PAGE_SIZES.map((s) => (
-                <option key={s} value={s}>{s === '25x35' ? '2.5" × 3.5" (single card)' : s}</option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="arrangement">Arrangement</Label>
-            <Select id="arrangement" value={options.card_arrangement} onChange={(e) => setOptions({ card_arrangement: e.target.value as Arrangement })}>
-              <option value="doublesided">Double sided (flip on long edge)</option>
-              <option value="front_only">Fronts only</option>
-              <option value="side_by_side">Front and back side by side</option>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="rows">Rows per page</Label>
-            <Input id="rows" type="number" min={1} max={12} value={options.page_rows} onChange={(e) => setOptions({ page_rows: Math.max(1, Number(e.target.value) || 1) })} />
-          </div>
-          <div>
-            <Label htmlFor="cols">Columns per page</Label>
-            <Input id="cols" type="number" min={1} max={12} value={options.page_columns} onChange={(e) => setOptions({ page_columns: Math.max(1, Number(e.target.value) || 1) })} />
-          </div>
-          <div className="sm:col-span-2">
-            <Label htmlFor="override" hint="empty = use each card's own count">Copies of every card</Label>
-            <Input id="override" type="number" min={1} value={options.card_count ?? ''} placeholder="Per card" onChange={(e) => setOptions({ card_count: e.target.value ? Math.max(1, Number(e.target.value)) : null })} />
-          </div>
-        </div>
-        {gridOverflows(options) && (
-          <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
-            <span>{options.page_columns} × {options.page_rows} cards do not fit on this page and will be cut off.</span>
-            <Button size="sm" onClick={() => { const g = fitGrid(options); setOptions({ page_rows: g.rows, page_columns: g.cols }); }}>
-              Fit to page ({fitGrid(options).cols} × {fitGrid(options).rows})
-            </Button>
-          </div>
-        )}
-        <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
-          {total} card{total === 1 ? '' : 's'} · {perPage} per page · card size {options.card_size === 'custom' ? `${options.custom_width}″ × ${options.custom_height}″` : options.card_size}
-        </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-gray-600 dark:text-gray-400">
-          <li>Enable <strong>background graphics</strong> in the print dialog, or colors and icons will be missing.</li>
-          <li>Use the same paper size as chosen here and print at <strong>100%</strong> (no “fit to page”).</li>
-          <li>For double sided printing, flip on the <strong>long edge</strong>.</li>
-          <li>Printers that drift slightly can misalign fronts and backs. Try a different printer or print single sided if so.</li>
-        </ul>
-      </div>
-    </Modal>
-  );
-};
 
 // ---------------------------------------------------------------------------
 // Import a single card (or several) from pasted JSON
@@ -207,7 +126,6 @@ export const CodeDialog: React.FC<{
 // ---------------------------------------------------------------------------
 export const SHORTCUTS: { keys: string[]; desc: string }[] = [
   { keys: ['Ctrl', 'S'], desc: 'Save the deck to a JSON file' },
-  { keys: ['Ctrl', 'P'], desc: 'Open the print dialog' },
   { keys: ['Ctrl', 'E'], desc: 'Upload the selected card to imgbb' },
   { keys: ['Alt', 'N'], desc: 'New card' },
   { keys: ['Alt', 'D'], desc: 'Duplicate the selected card' },
@@ -248,7 +166,7 @@ export const HelpDialog: React.FC<{ open: boolean; onClose: () => void }> = ({ o
             <li>Your deck is also kept in this browser automatically.</li>
             <li>Turn on <strong>custom back side</strong> to write the back of a card with the same tags as the front.</li>
             <li>Text accepts BBCode and basic HTML.</li>
-            <li>Print sheets with <strong>Print</strong>; export a single card as images or upload it for virtual tabletops.</li>
+            <li>Export a card as images or upload it for virtual tabletops.</li>
           </ul>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Based on <a className="underline" href="https://crobi.github.io/rpg-cards/generator/generate.html" target="_blank" rel="noopener noreferrer">crobi's rpg-cards</a>. Icons by game-icons.net (CC BY 3.0).

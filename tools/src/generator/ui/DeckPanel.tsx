@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Copy, FileJson, Plus, Search, Trash2 } from 'lucide-react';
 import { toHex } from '../core/color';
-import { deckCardCount } from '../core/pages';
 import { Deck } from './useDeck';
 import { Button, Input, Panel, cx } from './primitives';
 
@@ -21,12 +20,10 @@ export const DeckPanel: React.FC<Props> = ({ deck, onImportJson }) => {
         .filter(({ card }) => !q || card.title.toLowerCase().includes(q) || card.tags.some((t) => t.includes(q))),
     [cards, q]
   );
-  const total = deckCardCount(cards, options);
 
   return (
     <Panel
       title={`Deck · ${cards.length}`}
-      actions={<span className="text-[11px] font-mono text-gray-400 dark:text-gray-500">{total} to print</span>}
       className="flex flex-col"
     >
       <div className="p-3 space-y-3 border-b border-gray-200 dark:border-[#2E333D]">
@@ -79,7 +76,6 @@ export const DeckPanel: React.FC<Props> = ({ deck, onImportJson }) => {
                 >
                   <span className="h-3 w-3 shrink-0 rounded-sm border border-black/10 dark:border-white/10" style={{ backgroundColor: toHex(card.color || options.default_color) ?? '#000' }} />
                   <span className="truncate">{card.title || <em className="text-gray-400">Untitled</em>}</span>
-                  {card.count !== 1 && <span className="ml-auto shrink-0 text-[11px] font-mono text-gray-400 dark:text-gray-500">×{card.count}</span>}
                 </button>
                 {active && !q && (
                   <span className="absolute right-1 top-1/2 -translate-y-1/2 flex">

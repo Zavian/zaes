@@ -13,10 +13,10 @@ export const tools: Tool[] = [
     id: 'generator',
     path: '/generator',
     title: 'RPG Card Generator',
-    tagline: 'Spells, items and creatures as printable cards',
+    tagline: 'Spells, items and creatures as cards',
     description:
-      'Design tabletop RPG cards with a live preview, print double-sided sheets, and export images for Tabletop Simulator. Opens save files from the original generator.',
-    tags: ['Cards', 'Print', 'Tabletop Simulator'],
+      'Design tabletop RPG cards with a live preview and export images for Tabletop Simulator. Opens save files from the original generator.',
+    tags: ['Cards', 'Tabletop Simulator'],
   },
 ];
 

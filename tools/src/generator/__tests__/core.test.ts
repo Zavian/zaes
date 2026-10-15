@@ -7,7 +7,6 @@ import sample from '../sample.json';
 import { bbcodeToHtml, toggleBbcode } from '../core/bbcode';
 import { toHex } from '../core/color';
 import { parseDeck, serializeDeck, DeckParseError } from '../core/normalize';
-import { layoutPages } from '../core/pages';
 import { renderBack, renderFront } from '../core/render';
 import { sanitizeHtml } from '../core/sanitize';
 import { DEFAULT_OPTIONS } from '../core/types';
@@ -60,14 +59,6 @@ describe('importing an original generator save file', () => {
     expect(renderFront(burning, DEFAULT_OPTIONS)).toContain('<b>3d6 fire damage</b>');
   });
 
-  it('lays out a double sided print run', () => {
-    const pages = layoutPages(cards, { ...DEFAULT_OPTIONS, card_size: '25x35', page_rows: 3, page_columns: 3 });
-    expect(pages.length % 2).toBe(0); // front/back pairs
-    expect(pages[0]).toHaveLength(9);
-  });
-});
-
-describe('parseDeck', () => {
   it('accepts a single card and { cards } wrappers', () => {
     expect(parseDeck('{"title":"x"}')).toHaveLength(1);
     expect(parseDeck({ cards: [{ title: 'a' }, { title: 'b' }] })).toHaveLength(2);
@@ -94,19 +85,6 @@ describe('helpers', () => {
     const out = sanitizeHtml('<b onclick="x()">a</b><script>alert(1)</script><a href="javascript:alert(1)">l</a>');
     expect(out).not.toMatch(/script|onclick|javascript/i);
     expect(out).toContain('<b>a</b>');
-  });
-});
-
-describe('print grid', () => {
-  it('fits 7.5x5 cards on A4 as 1 x 2 and flags overflow', async () => {
-    const { fitGrid, gridOverflows } = await import('../core/pages');
-    const big = { ...DEFAULT_OPTIONS, card_size: '75x50' as const, page_rows: 2, page_columns: 1 };
-    expect(fitGrid(big)).toEqual({ cols: 1, rows: 2 });
-    expect(gridOverflows(big)).toBe(false);
-    expect(gridOverflows(DEFAULT_OPTIONS)).toBe(false);
-    expect(fitGrid(DEFAULT_OPTIONS)).toEqual({ cols: 2, rows: 2 });
-    expect(gridOverflows({ ...DEFAULT_OPTIONS, card_size: '75x50', page_rows: 3, page_columns: 3 })).toBe(true);
-    expect(fitGrid({ ...DEFAULT_OPTIONS, card_size: '25x35' })).toEqual({ cols: 3, rows: 3 });
   });
 });
 

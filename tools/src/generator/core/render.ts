@@ -190,10 +190,3 @@ export function renderBack(card: Card, options: DeckOptions): string {
   html += '</div></div>';
   return sanitizeHtml(html);
 }
-
-export function renderEmpty(options: DeckOptions): string {
-  const size = options.card_size;
-  const custom =
-    size === 'custom' ? `--custom-width:${options.custom_width}in;--custom-height:${options.custom_height}in;` : '';
-  return `<div class="card card-size-${size}" style="${custom}color:white;border-color:white;background-color:white"></div>`;
-}

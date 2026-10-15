@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CircleHelp, Download, Filter, FolderOpen, Printer, Sparkles, ArrowDownAZ, Trash2 } from 'lucide-react';
+import { CircleHelp, Download, Filter, FolderOpen, Sparkles, ArrowDownAZ, Trash2 } from 'lucide-react';
 import './cards.css';
 import { DeckParseError, cleanImportedCard, parseDeck, serializeDeck } from './core/normalize';
 import sample from './sample.json';
@@ -7,9 +7,8 @@ import { CardEditor } from './ui/CardEditor';
 import { DeckPanel } from './ui/DeckPanel';
 import { ExportPanel } from './ui/ExportPanel';
 import { Preview } from './ui/Preview';
-import { PrintSheets } from './ui/PrintSheets';
 import { SettingsPanel } from './ui/SettingsPanel';
-import { CodeDialog, HelpDialog, ImportCardDialog, PrintDialog } from './ui/dialogs';
+import { CodeDialog, HelpDialog, ImportCardDialog } from './ui/dialogs';
 import { Button, Panel } from './ui/primitives';
 import { useDeck } from './ui/useDeck';
 
@@ -32,8 +31,7 @@ function useWideScreen() {
 export default function GeneratorPage() {
   const deck = useDeck();
   const { cards, options, current } = deck;
-  const [dialog, setDialog] = useState<null | 'print' | 'import' | 'help' | 'sort' | 'filter'>(null);
-  const [printing, setPrinting] = useState(false);
+  const [dialog, setDialog] = useState<null | 'import' | 'help' | 'sort' | 'filter'>(null);
   const [uploadSignal, setUploadSignal] = useState(0);
   const wide = useWideScreen();
   const [toast, setToast] = useState('');
@@ -88,7 +86,6 @@ export default function GeneratorPage() {
       const mod = e.ctrlKey || e.metaKey;
       const key = e.key.toLowerCase();
       if (mod && key === 's') { e.preventDefault(); save(); }
-      else if (mod && key === 'p') { e.preventDefault(); setDialog('print'); }
       else if (mod && key === 'e') { e.preventDefault(); setUploadSignal((n) => n + 1); }
       else if (e.altKey && key === 'n') { e.preventDefault(); deck.addCard(); }
       else if (e.altKey && key === 'd') { e.preventDefault(); deck.duplicateCard(); }
@@ -151,7 +148,6 @@ export default function GeneratorPage() {
           <Button onClick={() => setDialog('sort')} disabled={cards.length < 2}><ArrowDownAZ className="w-3.5 h-3.5" /> Sort</Button>
           <Button onClick={() => setDialog('filter')} disabled={!cards.length}><Filter className="w-3.5 h-3.5" /> Filter</Button>
           <Button onClick={() => setDialog('help')} aria-label="Help (F1)" title="Help (F1)"><CircleHelp className="w-3.5 h-3.5" /></Button>
-          <Button variant="primary" onClick={() => setDialog('print')} disabled={!cards.length} title="Print (Ctrl+P)"><Printer className="w-3.5 h-3.5" /> Print</Button>
           <Button
             variant="danger"
             onClick={() => cards.length && confirm(`Delete all ${cards.length} cards? This cannot be undone.`) && deck.clear()}
@@ -194,7 +190,7 @@ export default function GeneratorPage() {
           )}
           {!wide && (
             <>
-              <Preview card={current} cards={cards} options={options} />
+              <Preview card={current} options={options} />
               <ExportPanel card={current} options={options} uploadSignal={uploadSignal} notify={notify} />
             </>
           )}
@@ -202,7 +198,7 @@ export default function GeneratorPage() {
 
         {wide && (
           <aside className="h-full overflow-y-auto pr-1 space-y-5">
-            <Preview card={current} cards={cards} options={options} />
+            <Preview card={current} options={options} />
             <ExportPanel card={current} options={options} uploadSignal={uploadSignal} notify={notify} />
           </aside>
         )}
@@ -220,21 +216,9 @@ export default function GeneratorPage() {
         </div>
       )}
 
-      <PrintDialog
-        open={dialog === 'print'}
-        onClose={() => setDialog(null)}
-        options={options}
-        setOptions={deck.setOptions}
-        cards={cards}
-        onPrint={() => {
-          setDialog(null);
-          setPrinting(true);
-        }}
-      />
       <ImportCardDialog open={dialog === 'import'} onClose={() => setDialog(null)} onImport={(c) => { deck.addCards(c.map(cleanImportedCard)); notify(`Imported ${c.length} card${c.length === 1 ? '' : 's'}.`); }} />
       <CodeDialog open={dialog === 'sort' || dialog === 'filter'} mode={dialog === 'filter' ? 'filter' : 'sort'} onClose={() => setDialog(null)} cards={cards} onResult={deck.replaceCards} />
       <HelpDialog open={dialog === 'help'} onClose={() => setDialog(null)} />
-      <PrintSheets active={printing} cards={cards} options={options} onDone={() => setPrinting(false)} />
     </div>
   );
 }

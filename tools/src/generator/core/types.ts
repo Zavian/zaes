@@ -19,8 +19,6 @@ export interface Card {
 }
 
 export type CardSize = '225x35' | '25x35' | '30x50' | '35x50' | '75x50' | '29x29' | 'custom';
-export type PageSize = 'A3' | 'A4' | 'A5' | 'Letter' | '25x35';
-export type Arrangement = 'doublesided' | 'front_only' | 'side_by_side';
 
 // Deck-wide settings. These live in local storage, not in the save file (the save file is a plain card array).
 export interface DeckOptions {
@@ -32,11 +30,6 @@ export interface DeckOptions {
   default_color: string;
   default_icon: string;
   default_title_size: string;
-  page_size: PageSize;
-  page_rows: number;
-  page_columns: number;
-  card_arrangement: Arrangement;
-  card_count: number | null; // overrides every card's own count when set
   foreground_color: string;
   background_color: string;
 }
@@ -50,11 +43,6 @@ export const DEFAULT_OPTIONS: DeckOptions = {
   default_color: 'black',
   default_icon: 'ace',
   default_title_size: '13',
-  page_size: 'A4',
-  page_rows: 2, // 3" x 5" cards on A4
-  page_columns: 2,
-  card_arrangement: 'doublesided',
-  card_count: null,
   foreground_color: 'white',
   background_color: 'white',
 };
@@ -68,7 +56,5 @@ export const CARD_SIZES: { value: CardSize; label: string }[] = [
   { value: '29x29', label: '2.9" × 2.9"' },
   { value: 'custom', label: 'Custom size' },
 ];
-
-export const PAGE_SIZES: PageSize[] = ['A3', 'A4', 'A5', 'Letter', '25x35'];
 
 export const TITLE_SIZES = ['16', '15', '14', '13', '12', '11', '10'];

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { CARD_SIZES, Card, CardSize, DeckOptions, TITLE_SIZES } from '../core/types';
-import { fitGrid } from '../core/pages';
 import { IconField } from './IconField';
 import { Button, Input, Label, Panel, Select, Toggle, cx } from './primitives';
 
@@ -30,11 +29,7 @@ export const SettingsPanel: React.FC<Props> = ({ options, setOptions, applyToAll
     {open && <div className="p-4 space-y-5">
         <div>
           <Label htmlFor="card-size">Card size</Label>
-          <Select id="card-size" value={options.card_size} onChange={(e) => {
-              const next = { ...options, card_size: e.target.value as CardSize };
-              const g = fitGrid(next);
-              setOptions({ card_size: next.card_size, page_rows: g.rows, page_columns: g.cols });
-            }}>
+          <Select id="card-size" value={options.card_size} onChange={(e) => setOptions({ card_size: e.target.value as CardSize })}>
             {CARD_SIZES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}

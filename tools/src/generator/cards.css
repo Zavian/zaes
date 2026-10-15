@@ -185,37 +185,3 @@
   width: calc(min(var(--custom-width, 2.5in), var(--custom-height, 3.5in)) * 0.4);
   height: calc(min(var(--custom-width, 2.5in), var(--custom-height, 3.5in)) * 0.4);
 }
-
-/* ---- Print sheet ------------------------------------------------------- */
-.rpg-sheet {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-content: center;
-  justify-content: center;
-  padding: 0;
-  overflow: hidden;
-  background: white;
-  break-after: page;
-  page-break-after: always;
-}
-.rpg-sheet-A3 { width: 297mm; height: 419mm; }
-.rpg-sheet-A4 { width: 210mm; height: 296mm; }
-.rpg-sheet-A5 { width: 148mm; height: 209mm; }
-.rpg-sheet-Letter { width: 8.5in; height: 11in; }
-.rpg-sheet-25x35 { width: 2.5in; height: 3.5in; }
-.rpg-sheet .card { box-shadow: none; }
-
-#rpg-print-root { position: absolute; left: -100000px; top: 0; visibility: hidden; }
-@media print {
-  html.rpg-printing body > #root { display: none !important; }
-  html.rpg-printing #rpg-print-root { position: static !important; visibility: visible !important; display: block !important; }
-  html.rpg-printing,
-  html.rpg-printing body { background: white !important; margin: 0 !important; padding: 0 !important; }
-  html.rpg-printing .rpg-sheet { break-inside: avoid; }
-  html.rpg-printing .rpg-sheet:last-child { break-after: auto; page-break-after: auto; }
-  html.rpg-printing .card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-}
-
-/* Cards are always light, so their text selection is too (the page's dark selection would be unreadable on white). */
-.card::selection, .card *::selection { background: #b4d5fe; }
