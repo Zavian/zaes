@@ -3,7 +3,7 @@ import { bbcodeToHtml } from './bbcode';
 import { cardColorTriplet, toHex } from './color';
 import { imageElement, inlineImages } from './image';
 import { sanitizeHtml } from './sanitize';
-import { Card, DeckOptions } from './types';
+import { CARD_SIZES, Card, DeckOptions } from './types';
 
 // ---------------------------------------------------------------------------
 // Card data helpers
@@ -147,9 +147,12 @@ function iconHtml(card: Card, options: DeckOptions): string {
 }
 
 function wrapperStart(card: Card, options: DeckOptions, color: string): string {
-  const size = options.card_size;
-  const custom =
-    size === 'custom' ? `;--custom-width:${options.custom_width}in;--custom-height:${options.custom_height}in` : '';
+  // A card can carry its own size; otherwise the deck setting applies.
+  const own = CARD_SIZES.some((s) => s.value === card.card_size);
+  const size = own ? (card.card_size as string) : options.card_size;
+  const w = own ? card.custom_width ?? options.custom_width : options.custom_width;
+  const h = own ? card.custom_height ?? options.custom_height : options.custom_height;
+  const custom = size === 'custom' ? `;--custom-width:${Number(w) || 2.5}in;--custom-height:${Number(h) || 3.5}in` : '';
   return `<div class="card card-size-${size}${options.rounded_corners ? ' rounded-corners' : ''}" style="--card-color:${cardColorTriplet(color)}${custom}">`;
 }
 
