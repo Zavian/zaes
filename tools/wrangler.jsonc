@@ -1,0 +1,9 @@
+{
+  "name": "zaes-tools",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  "routes": [{ "pattern": "tools.zaes.dev", "custom_domain": true }]
+}

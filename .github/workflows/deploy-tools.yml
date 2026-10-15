@@ -1,0 +1,34 @@
+name: Deploy tools.zaes.dev
+
+on:
+  push:
+    branches: [main]
+    paths: [tools/**, .github/workflows/deploy-tools.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: tools
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          workingDirectory: tools
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
