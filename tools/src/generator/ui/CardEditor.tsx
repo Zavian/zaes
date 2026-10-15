@@ -1,7 +1,9 @@
 import React from 'react';
+import { localImages } from '../core/image';
 import { Card, DeckOptions, TITLE_SIZES } from '../core/types';
 import { ColorField } from './ColorField';
 import { ContentEditor } from './ContentEditor';
+import { ImageLibrary } from './ImageLibrary';
 import { IconField } from './IconField';
 import { Input, Label, Panel, Select, Toggle } from './primitives';
 
@@ -14,6 +16,7 @@ interface Props {
 export const CardEditor: React.FC<Props> = ({ card, options, onChange }) => {
   const color = card.color ?? '';
   const effectiveColor = card.color || options.default_color;
+  const addImage = (name: string, dataUrl: string) => onChange({ images: { ...localImages(card), [name]: dataUrl } });
   return (
     <Panel title="Card">
       <div className="p-4 space-y-5">
@@ -72,7 +75,11 @@ export const CardEditor: React.FC<Props> = ({ card, options, onChange }) => {
           label="Front contents"
           lines={card.contents}
           onChange={(lines) => onChange({ contents: lines })}
+          images={localImages(card)}
+          options={options}
+          onAddImage={addImage}
           color={effectiveColor}
+          icon={card.icon || options.default_icon}
         />
 
         <div className="pt-1 border-t border-gray-200 dark:border-[#2E333D]">
@@ -92,9 +99,23 @@ export const CardEditor: React.FC<Props> = ({ card, options, onChange }) => {
             label="Back contents"
             lines={card.back_contents}
             onChange={(lines) => onChange({ back_contents: lines })}
+            images={localImages(card)}
+            options={options}
+            onAddImage={addImage}
             color={effectiveColor}
+            icon={card.icon_back || card.icon || options.default_icon}
           />
         )}
+
+        <ImageLibrary
+          images={localImages(card)}
+          text={[...card.contents, ...card.back_contents].join('\n')}
+          onInsert={(name) => onChange({ contents: [...card.contents.filter((l, i, a) => i < a.length - 1 || l.trim()), `image | 120 | @${name}`] })}
+          onRemove={(name) => {
+            const { [name]: _gone, ...rest } = localImages(card);
+            onChange({ images: Object.keys(rest).length ? rest : undefined });
+          }}
+        />
 
         <div>
           <Label htmlFor="card-tags" hint="comma separated, used by sort & filter">

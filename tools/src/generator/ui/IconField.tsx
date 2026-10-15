@@ -64,8 +64,8 @@ export const IconField: React.FC<FieldProps> = ({ value, onChange, placeholder, 
           onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
           className={cx('font-mono', !known && 'border-amber-400 dark:border-amber-600')}
         />
-        <Button onClick={() => setPicker(true)} aria-label={`Browse icons for ${label}`}>
-          <Grid3x3 className="w-3.5 h-3.5" /> Browse
+        <Button onClick={() => setPicker(true)} aria-label={`Browse icons for ${label}`} title="Browse icons">
+          <Grid3x3 className="w-3.5 h-3.5" /> <span className="hidden 2xl:inline">Browse</span>
         </Button>
       </div>
       {!known && <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">No icon with that name.</p>}

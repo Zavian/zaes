@@ -6,10 +6,11 @@ import fixture from './fixture-rpg-cards.json';
 import sample from '../sample.json';
 import { bbcodeToHtml, toggleBbcode } from '../core/bbcode';
 import { toHex } from '../core/color';
-import { parseDeck, serializeDeck, DeckParseError } from '../core/normalize';
+import { formatImageLine, parseImageLine } from '../core/image';
+import { newCard, parseDeck, serializeDeck, DeckParseError } from '../core/normalize';
 import { renderBack, renderFront } from '../core/render';
 import { sanitizeHtml } from '../core/sanitize';
-import { DEFAULT_OPTIONS } from '../core/types';
+import { Card, DEFAULT_OPTIONS } from '../core/types';
 
 const raw = readFileSync(resolve('src/generator/__tests__/fixture-rpg-cards.json'), 'utf8');
 const icons: string[] = JSON.parse(readFileSync(resolve('public/generator-assets/icons.json'), 'utf8'));
@@ -139,5 +140,77 @@ describe('contentId', () => {
     expect(contentId('<a>', '<b>')).toBe(contentId('<a>', '<b>'));
     expect(contentId('<a>', '<b>')).not.toBe(contentId('<a>x', '<b>'));
     expect(contentId('ab', 'c')).not.toBe(contentId('a', 'bc'));
+  });
+});
+
+describe('image element', () => {
+  const PX = 'data:image/png;base64,iVBORw0KGgo=';
+  const card = (line: string, images: Record<string, string> = { pic: PX }) =>
+    ({ ...newCard(), contents: [line], images }) as Card;
+  const html = (line: string, images?: Record<string, string>) => renderFront(card(line, images), DEFAULT_OPTIONS);
+
+  it('renders a local picture at the given width', () => {
+    const out = html('image | 80 | @pic');
+    expect(out).toContain('card-image-block');
+    expect(out).toContain('width:80px');
+    expect(out).toContain(PX);
+  });
+
+  it('applies opacity and alignment', () => {
+    const out = html('image | 80 | @pic | right | opacity=40');
+    expect(out).toContain('opacity:0.4');
+    expect(out).toContain('align-right');
+  });
+
+  it('fills with the card color or a picked color', () => {
+    expect(html('image | 80 | @pic | fill=card')).toContain('mask-image');
+    expect(html('image | 80 | @pic | fill=#ff0000')).toMatch(/background-color:\s*#ff0000/i);
+  });
+
+  it('ignores unknown names and unsafe sources', () => {
+    expect(html('image | 80 | @nope')).not.toContain('card-image');
+    expect(html('image | 80 | javascript:alert(1)')).not.toContain('card-image');
+    expect(html('image | 80 | @pic', { pic: 'data:text/html;base64,AAAA' })).not.toContain('card-image');
+  });
+
+  it('renders inline pictures in text', () => {
+    expect(html('text | hi [img=20]@pic[/img]')).toContain('card-image-inline');
+  });
+
+  it('drops unused pictures when the deck is serialized', () => {
+    const used = card('image | 80 | @pic', { pic: PX, old: PX });
+    const out = JSON.parse(serializeDeck([used]))[0];
+    expect(Object.keys(out.images)).toEqual(['pic']);
+    expect(JSON.parse(serializeDeck([card('text | x')]))[0].images).toBeUndefined();
+  });
+});
+
+describe('image radius and line editing', () => {
+  const PX = 'data:image/png;base64,iVBORw0KGgo=';
+  const c = (line: string) => ({ ...newCard(), contents: [line], images: { pic: PX } }) as Card;
+
+  it('uses the card corner radius by default, none when corners are square', () => {
+    expect(renderFront(c('image | 80 | @pic'), DEFAULT_OPTIONS)).toContain('border-radius:4px');
+    expect(renderFront(c('image | 80 | @pic'), { ...DEFAULT_OPTIONS, rounded_corners: false })).toContain('border-radius:0px');
+  });
+
+  it('lets radius= override it', () => {
+    expect(renderFront(c('image | 80 | @pic | radius=12'), DEFAULT_OPTIONS)).toContain('border-radius:12px');
+  });
+
+  it('round-trips a line through parse/format', () => {
+    const line = 'image | 80x40 | @pic | right | opacity=40 | fill=card | radius=8';
+    expect(formatImageLine(parseImageLine(line))).toBe(line);
+    expect(formatImageLine(parseImageLine('image | 120 | @pic'))).toBe('image | 120 | @pic');
+  });
+});
+
+describe('@icon image', () => {
+  it('uses the card icon, painted in the card color by default', () => {
+    const c = { ...newCard(), icon: 'sword', color: 'red', contents: ['image | 40 | @icon'] } as Card;
+    const out = renderFront(c, DEFAULT_OPTIONS);
+    expect(out).toContain('sword');
+    expect(out).toContain('mask-image');
+    expect(renderFront({ ...c, contents: ['image | 40 | @icon | fill=none'] } as Card, DEFAULT_OPTIONS)).not.toContain('card-image-fill');
   });
 });

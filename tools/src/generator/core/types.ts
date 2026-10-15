@@ -35,7 +35,7 @@ export interface DeckOptions {
 }
 
 export const DEFAULT_OPTIONS: DeckOptions = {
-  card_size: '30x50',
+  card_size: '35x50',
   custom_width: 2.5,
   custom_height: 3.5,
   rounded_corners: true,
@@ -51,7 +51,7 @@ export const CARD_SIZES: { value: CardSize; label: string }[] = [
   { value: '225x35', label: '2.25" × 3.5" (Bridge)' },
   { value: '25x35', label: '2.5" × 3.5" (Poker)' },
   { value: '30x50', label: '3.0" × 5.0"' },
-  { value: '35x50', label: '3.5" × 5.0"' },
+  { value: '35x50', label: '3.5" × 5.0" (Default)' },
   { value: '75x50', label: '7.5" × 5.0"' },
   { value: '29x29', label: '2.9" × 2.9"' },
   { value: 'custom', label: 'Custom size' },

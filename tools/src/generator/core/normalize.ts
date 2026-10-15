@@ -1,3 +1,4 @@
+import { pruneImages } from './image';
 import { Card } from './types';
 
 export class DeckParseError extends Error {}
@@ -61,7 +62,7 @@ export function cleanImportedCard(card: Card): Card {
   return { ...card, contents: card.contents.map(clean), back_contents: card.back_contents.map(clean) };
 }
 
-export const serializeDeck = (cards: Card[]): string => JSON.stringify(cards, null, 2);
+export const serializeDeck = (cards: Card[]): string => JSON.stringify(cards.map(pruneImages), null, 2);
 
 export const newCard = (): Card => ({
   count: 1,

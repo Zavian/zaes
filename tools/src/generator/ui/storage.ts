@@ -1,4 +1,5 @@
 import { Card, DEFAULT_OPTIONS, DeckOptions } from '../core/types';
+import { pruneImages } from '../core/image';
 import { normalizeCard } from '../core/normalize';
 
 const KEY = 'zaes_rpg_cards_v1';
@@ -27,7 +28,7 @@ export function loadDeck(): StoredDeck | null {
 
 export function saveDeck(deck: StoredDeck): boolean {
   try {
-    localStorage.setItem(KEY, JSON.stringify(deck));
+    localStorage.setItem(KEY, JSON.stringify({ ...deck, cards: deck.cards.map(pruneImages) }));
     return true;
   } catch {
     return false;

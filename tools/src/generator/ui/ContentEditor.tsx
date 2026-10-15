@@ -1,8 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bold, ChevronDown, Italic, Swords, Underline } from 'lucide-react';
+import { Bold, ChevronDown, ImagePlus, Italic, Swords, Underline } from 'lucide-react';
+import { iconUrl as iconUrlOf } from '../core/assets';
 import { toggleBbcode } from '../core/bbcode';
+import { Card, DeckOptions } from '../core/types';
 import { COLOR_PALETTE, toHex } from '../core/color';
 import { FS_NOTE, TAG_DOCS } from '../core/tags';
+import { ImageDialog } from './ImageDialog';
+import { readLocalImage } from './localImage';
 import { Button, Label, Textarea } from './primitives';
 
 interface Props {
@@ -11,6 +15,10 @@ interface Props {
   lines: string[];
   onChange: (lines: string[]) => void;
   color?: string;
+  icon?: string; // name of the card's icon, for @icon
+  images?: Record<string, string>;
+  options?: DeckOptions;
+  onAddImage?: (name: string, dataUrl: string) => void;
 }
 
 const RARITY: Record<string, string> = {
@@ -26,12 +34,16 @@ const rarityName = (color?: string) => {
   return Object.entries(COLOR_PALETTE).find(([, v]) => v === hex)?.[0] ?? 'Color';
 };
 
-export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, color }) => {
+export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, color, icon = '', images = {}, options, onAddImage }) => {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [lineIndex, setLineIndex] = useState(0);
   const [menu, setMenu] = useState(false);
   const menuWrap = useRef<HTMLDivElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [imageError, setImageError] = useState('');
+  const [imageDialog, setImageDialog] = useState(false);
   const text = lines.join('\n');
+  const iconUrl = icon ? iconUrlOf(icon.replace(/[^a-zA-Z0-9_-]/g, '')) : '';
 
   useEffect(() => {
     if (!menu) return;
@@ -83,6 +95,18 @@ export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, col
     }
   };
 
+  const pickImage = async (file?: File) => {
+    if (!file || !onAddImage) return;
+    try {
+      const { name, dataUrl } = await readLocalImage(file, Object.keys(images));
+      onAddImage(name, dataUrl);
+      insertTag(`image | 120 | @${name}`);
+      setImageError('');
+    } catch (e) {
+      setImageError((e as Error).message);
+    }
+  };
+
   const makeWeapon = () => {
     const tpl = `subtitle | ${rarityName(color)} Weapon Type (Attunement)\nrule\nproperty | Damage | damage\nproperty | Modifier | mod\nproperty | Properties | props\nrule\n`;
     commit(text.length > 0 ? `${text}\n${tpl}` : tpl);
@@ -99,6 +123,13 @@ export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, col
 
   const currentTag = lines[lineIndex]?.split('|')[0].trim();
   const doc = TAG_DOCS.find((t) => t.name === currentTag);
+
+  const applyImageLine = (line: string) => {
+    setImageDialog(false);
+    const next = lines.slice();
+    next[lineIndex] = line;
+    onChange(next);
+  };
 
   return (
     <div>
@@ -135,6 +166,14 @@ export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, col
             </ul>
           )}
         </div>
+        {onAddImage && (
+          <>
+            <input ref={fileInput} type="file" accept="image/*" hidden onChange={(e) => { void pickImage(e.target.files?.[0]); e.target.value = ''; }} />
+            <Button size="sm" variant="ghost" onClick={() => fileInput.current?.click()} title="Add a picture from your computer">
+              <ImagePlus className="w-3.5 h-3.5" /> Image
+            </Button>
+          </>
+        )}
         <Button size="sm" variant="ghost" onClick={makeWeapon} title="Append a weapon template">
           <Swords className="w-3.5 h-3.5" /> Weapon
         </Button>
@@ -155,9 +194,16 @@ export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, col
         onSelect={track}
       />
       <p className="mt-1 min-h-5 text-xs font-mono text-gray-500 dark:text-gray-400">
-        {doc ? (
+        {imageError ? (
+          <span className="text-red-600 dark:text-red-400">{imageError}</span>
+        ) : doc ? (
           <>
             <span className="text-emerald-700 dark:text-emerald-400">{doc.syntax}</span>
+            {currentTag === 'image' && options && (
+              <button type="button" onClick={() => setImageDialog(true)} className="ml-3 underline text-emerald-700 dark:text-emerald-400 cursor-pointer">
+                Edit image…
+              </button>
+            )}
             {doc.fs && <span className="ml-2 text-gray-400 dark:text-gray-500">[| fs-1…6]</span>}
           </>
         ) : currentTag ? (
@@ -166,6 +212,18 @@ export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, col
           <span title={FS_NOTE}>One element per line: tag | parameter | parameter</span>
         )}
       </p>
+      {options && (
+        <ImageDialog
+          open={imageDialog}
+          line={lines[lineIndex] ?? ''}
+          card={{ images } as unknown as Card}
+          options={options}
+          cardColor={toHex(color) ?? '#000000'}
+          iconUrl={iconUrl}
+          onApply={applyImageLine}
+          onClose={() => setImageDialog(false)}
+        />
+      )}
     </div>
   );
 };

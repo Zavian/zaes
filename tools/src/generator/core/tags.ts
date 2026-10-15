@@ -22,6 +22,7 @@ export const TAG_DOCS: TagDoc[] = [
   { name: 'section', syntax: 'section | (text)', insert: 'section | ', description: 'Small-caps heading with a line under it, in the card color.' },
   { name: 'disabled', syntax: 'disabled | (text)', insert: 'disabled | ', description: 'Renders nothing. Handy for notes that must not appear on the card.' },
   { name: 'icon', syntax: 'icon | (icon name) [| (size in px) | (left|center|right)]', insert: 'icon | ace | 40 | center', description: 'A smaller inline icon coloured like the card.' },
+  { name: 'image', syntax: 'image | (width, 120 / 50% / 120x80) | (@icon, @name or https URL) [| left|center|right | opacity=50 | fill=card]', insert: 'image | 120 | @', description: 'A picture on its own line. Use the Image button to add one from your computer. opacity is 0-100, fill=card (or a color) paints the picture in that color, using its shape as a stencil. @icon is the card’s own icon, painted in the card color (fill=none to keep it as is). Inline in text: [img=24]@name[/img].' },
   { name: 'lore', syntax: 'lore | (text)', insert: 'lore | ', description: 'Italic orange-ish flavour text.' },
   { name: 'centerlore', syntax: 'centerlore | (text)', insert: 'centerlore | ', description: 'Like lore, centered.' },
   { name: 'action', syntax: 'action | (text)', insert: 'action | ', description: 'Large centered text in the card color. Defaults to fs-2.', fs: true },

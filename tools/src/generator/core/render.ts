@@ -1,6 +1,7 @@
 import { iconUrl } from './assets';
 import { bbcodeToHtml } from './bbcode';
 import { cardColorTriplet, toHex } from './color';
+import { imageElement, inlineImages } from './image';
 import { sanitizeHtml } from './sanitize';
 import { Card, DeckOptions } from './types';
 
@@ -93,6 +94,9 @@ export const ELEMENTS: Record<string, ElementGenerator> = {
     return `<div class="card-element card-inline-icon align-${align}" style="--icon:url('${iconUrl(icon)}');height:${size}px;min-height:${size}px;width:${size}px;background-color:${cssColor(colorFront(card, options))}"></div>`;
   },
 
+  image: (p, { card, options }) =>
+    imageElement(['image', ...p].join(' | '), card, cssColor(colorFront(card, options)), options.rounded_corners ? 4 : 0, iconUrl(safeIcon(iconFront(card, options)))),
+
   lore: (p) => `<div class="card-element card-lore">${p[0] ?? ''}</div>`,
   centerlore: (p) => `<div class="card-element card-lore card-center">${p[0] ?? ''}</div>`,
 };
@@ -123,7 +127,7 @@ function contents(lines: string[], card: Card, options: DeckOptions): string {
     .map((line) => {
       const [name, ...params] = splitParams(line);
       const gen = ELEMENTS[name];
-      if (gen) return gen(params, { card, options });
+      if (gen) return inlineImages(gen(params, { card, options }), card);
       if (name.length > 0) return `<div>Unknown element: ${params.join('<br />')}</div>`;
       return '';
     })

@@ -126,6 +126,14 @@
 .card-inline-icon.align-right { align-self: flex-end; }
 .card-inline-icon.align-center { align-self: center; }
 
+.card-image-block { flex: none; }
+.card-image-block.align-left { align-self: flex-start; }
+.card-image-block.align-right { align-self: flex-end; }
+.card-image-block.align-center { align-self: center; }
+.card-image { display: block; width: 100%; object-fit: contain; }
+.card-image-fill { width: 100%; height: 100%; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.card-image-inline { display: inline-block; vertical-align: middle; }
+
 .card-property-line { text-indent: -1em; margin-left: 1em; font-size: inherit; color: black; }
 .card-property-name { display: inline; font-size: inherit; font-weight: bold; }
 .card-property-text { display: inline; }
