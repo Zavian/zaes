@@ -18,6 +18,16 @@ if (!API_KEY) {
   process.exit(1);
 }
 
+// API_KEY is the admin key (full access, as before). Other people get their own key via an
+// invite: it is confined to its own folder u-<id>/ and capped by a quota.
+const USERS_PATH = path.join(__dirname, 'keys.json');
+const USER_QUOTA_BYTES = Number(process.env.USER_QUOTA_MB || 100) * 1024 * 1024;
+const USER_MAX_FILE_BYTES = Number(process.env.USER_MAX_FILE_MB || 5) * 1024 * 1024;
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://tools.zaes.dev,http://localhost:3000')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+
+app.set('trust proxy', true); // behind Cloudflare: req.ip is the visitor
+
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -69,15 +79,92 @@ function safeCompareKey(token) {
   return a.length === b.length && crypto.timingSafeEqual(a, b) && token === API_KEY;
 }
 
-// Simple API key auth — checks header: Authorization: Bearer <key>
-function requireApiKey(req, res, next) {
+// --- Users and invites (keys.json) ----------------------------------------
+// Only hashes are stored: a leaked file reveals no usable key or invite code.
+//   users:   { <id>: { label, keyHash, createdAt } }
+//   invites: { <inviteId>: { label, codeHash, createdAt } }
+let store = { users: {}, invites: {} };
+
+function loadStore() {
+  try {
+    if (fs.existsSync(USERS_PATH)) store = { users: {}, invites: {}, ...JSON.parse(fs.readFileSync(USERS_PATH, 'utf8')) };
+  } catch (err) {
+    console.error('FATAL: keys.json is unreadable:', err.message);
+    process.exit(1); // starting empty would silently revoke every key
+  }
+}
+
+function saveStore() {
+  const tmp = `${USERS_PATH}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(store, null, 2));
+  fs.renameSync(tmp, USERS_PATH);
+}
+
+loadStore();
+
+const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
+const newSecret = (prefix) => `${prefix}_${crypto.randomBytes(24).toString('hex')}`;
+
+function findUserByKey(token) {
+  const hash = sha256(token);
+  return Object.entries(store.users).find(([, u]) => u.keyHash === hash)?.[0] ?? null;
+}
+
+// Auth: Authorization: Bearer <key>. Sets req.principal = { admin: true } or { id, label }.
+function authenticate(req) {
   const auth = req.headers['authorization'] || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!token) return null;
+  if (safeCompareKey(token)) return { admin: true };
+  const id = findUserByKey(token);
+  return id ? { admin: false, id, label: store.users[id].label } : null;
+}
 
-  if (!safeCompareKey(token)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+function requireApiKey(req, res, next) {
+  req.principal = authenticate(req);
+  if (!req.principal) return res.status(401).json({ error: 'Unauthorized' });
   next();
+}
+
+function requireAdmin(req, res, next) {
+  requireApiKey(req, res, () => {
+    if (!req.principal.admin) return res.status(403).json({ error: 'Admin key required' });
+    next();
+  });
+}
+
+// CORS: the generator at tools.zaes.dev uploads from the browser. Keys travel in a header, not cookies.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
+// A user's own folder, and what they may see or touch.
+const userRoot = (id) => `u-${id}`;
+const ownsPath = (principal, rel) => principal.admin || rel === userRoot(principal.id) || rel.startsWith(`${userRoot(principal.id)}/`);
+
+function folderBytes(dir) {
+  if (!fs.existsSync(path.join(UPLOAD_DIR, dir))) return { bytes: 0, files: 0 };
+  const imgs = listImages(dir);
+  return { bytes: imgs.reduce((n, f) => n + f.size, 0), files: imgs.length };
+}
+
+// Registration is public (an invite is the gate), so cap attempts per visitor.
+const attempts = new Map();
+function tooManyAttempts(ip, limit = 10, windowMs = 60 * 60 * 1000) {
+  const now = Date.now();
+  const recent = (attempts.get(ip) || []).filter((t) => now - t < windowMs);
+  recent.push(now);
+  attempts.set(ip, recent);
+  return recent.length > limit;
 }
 
 // --- Folders and named files ---------------------------------------------
@@ -89,11 +176,11 @@ const MAX_FOLDER_DEPTH = 3;
 const SEGMENT = /^[a-zA-Z0-9_-]{1,64}$/;
 
 // Returns '' (root), a clean "a/b" string, or null when invalid.
-function parseFolder(raw) {
+function parseFolder(raw, maxDepth = MAX_FOLDER_DEPTH) {
   if (raw === undefined || raw === null || raw === '') return '';
   if (typeof raw !== 'string') return null;
   const parts = raw.split('/');
-  if (parts.length > MAX_FOLDER_DEPTH || !parts.every((p) => SEGMENT.test(p))) return null;
+  if (parts.length > maxDepth || !parts.every((p) => SEGMENT.test(p))) return null;
   return parts.join('/');
 }
 
@@ -110,7 +197,7 @@ function isSafeRelPath(rel) {
   const file = parts.pop();
   return parts.length <= MAX_FOLDER_DEPTH
     && parts.every((p) => SEGMENT.test(p))
-    && /^[a-zA-Z0-9_-]+\.webp$/.test(file);
+    && /^[a-zA-Z0-9_-]+\.(webp|png)$/.test(file);
 }
 
 function dropHashesFor(rel) {
@@ -124,7 +211,7 @@ function listImages(dir = '') {
   for (const entry of fs.readdirSync(path.join(UPLOAD_DIR, dir), { withFileTypes: true })) {
     const rel = dir ? `${dir}/${entry.name}` : entry.name;
     if (entry.isDirectory()) out.push(...listImages(rel));
-    else if (entry.name.toLowerCase().endsWith('.webp')) {
+    else if (/\.(webp|png)$/i.test(entry.name)) {
       const stat = fs.statSync(path.join(UPLOAD_DIR, rel));
       out.push({ filename: rel, folder: dir, url: `${PUBLIC_BASE_URL}/i/${rel}`, size: stat.size, uploadedAt: stat.mtime });
     }
@@ -149,26 +236,43 @@ app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.post('/upload', requireApiKey, upload.single('file'), async (req, res) => {
+const userUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: USER_MAX_FILE_BYTES },
+  fileFilter: (req, file, cb) => (file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Only image files are allowed'))),
+});
+const chooseUpload = (req, res, next) => (req.principal.admin ? upload : userUpload).single('file')(req, res, next);
+
+app.post('/upload', requireApiKey, chooseUpload, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded (expected field name "file")' });
   }
 
-  // folder / name come from the form fields or, for simple clients, the query.
-  const folder = parseFolder(req.body?.folder ?? req.query.folder);
+  // folder / name / format come from the form fields or, for simple clients, the query.
+  const rawFolder = req.body?.folder ?? req.query.folder;
   const name = parseName(req.body?.name ?? req.query.name);
-  if (folder === null) {
-    return res.status(400).json({ error: `Invalid folder (up to ${MAX_FOLDER_DEPTH} segments of letters, digits, _ or -, joined by /)` });
+  const format = req.body?.format ?? req.query.format ?? 'webp';
+  const { principal } = req;
+
+  // A user's files live under u-<id>/, with at most two folder levels of their own beneath it.
+  const maxDepth = principal.admin ? MAX_FOLDER_DEPTH : MAX_FOLDER_DEPTH - 1;
+  const sub = parseFolder(rawFolder, maxDepth);
+  if (sub === null) {
+    return res.status(400).json({ error: `Invalid folder (up to ${maxDepth} segments of letters, digits, _ or -, joined by /)` });
   }
   if (name === null) {
     return res.status(400).json({ error: 'Invalid name (letters, digits, _ or - only; no extension)' });
   }
+  if (format !== 'webp' && format !== 'png') {
+    return res.status(400).json({ error: 'Invalid format (webp or png)' });
+  }
+  const folder = principal.admin ? sub : [userRoot(principal.id), sub].filter(Boolean).join('/');
 
   try {
     const contentHash = hashBuffer(req.file.buffer);
     const prefix = folder ? `${folder}/` : '';
-    // Dedupe is per folder, so the same bytes in two folders are two files.
-    const hashKey = folder ? `${folder}:${contentHash}` : contentHash;
+    // Dedupe is per folder and format, so the same bytes in two folders are two files.
+    const hashKey = `${folder ? `${folder}:` : ''}${contentHash}${format === 'png' ? ':png' : ''}`;
 
     // Unnamed upload: if these exact bytes are already stored here, hand back the
     // existing URL. A named upload never dedupes -- it targets one specific path.
@@ -192,14 +296,25 @@ app.post('/upload', requireApiKey, upload.single('file'), async (req, res) => {
       }
     }
 
-    const filename = `${prefix}${name || crypto.randomBytes(8).toString('hex')}.webp`;
+    const filename = `${prefix}${name || crypto.randomBytes(8).toString('hex')}.${format}`;
     const outputPath = path.join(UPLOAD_DIR, filename);
     const existed = fs.existsSync(outputPath);
+
+    const image = sharp(req.file.buffer);
+    const output = await (format === 'png' ? image.png() : image.webp({ quality: 85 })).toBuffer();
+
+    if (!principal.admin) {
+      const replaced = existed ? fs.statSync(outputPath).size : 0;
+      const { bytes } = folderBytes(userRoot(principal.id));
+      if (bytes - replaced + output.length > USER_QUOTA_BYTES) {
+        return res.status(413).json({ error: `Storage quota exceeded (${Math.round(USER_QUOTA_BYTES / 1024 / 1024)} MB). Delete some images first.` });
+      }
+    }
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     // Write beside, then rename: a reader never sees a half-written file.
     const tmpPath = `${outputPath}.${crypto.randomBytes(4).toString('hex')}.tmp`;
-    await sharp(req.file.buffer).webp({ quality: 85 }).toFile(tmpPath);
+    fs.writeFileSync(tmpPath, output);
     fs.renameSync(tmpPath, outputPath);
 
     dropHashesFor(filename);
@@ -217,7 +332,7 @@ app.post('/upload', requireApiKey, upload.single('file'), async (req, res) => {
       url,
       filename,
       folder,
-      size: fs.statSync(outputPath).size,
+      size: output.length,
     });
   } catch (err) {
     console.error('Conversion error:', err);
@@ -225,10 +340,71 @@ app.post('/upload', requireApiKey, upload.single('file'), async (req, res) => {
   }
 });
 
+// Who am I, and how much room is left (the generator shows this after connecting).
+app.get('/api/me', requireApiKey, (req, res) => {
+  const { principal } = req;
+  if (principal.admin) return res.json({ success: true, admin: true });
+  const { bytes, files } = folderBytes(userRoot(principal.id));
+  res.json({ success: true, admin: false, id: principal.id, label: principal.label, usedBytes: bytes, quotaBytes: USER_QUOTA_BYTES, files, maxFileBytes: USER_MAX_FILE_BYTES });
+});
+
+// --- Invites and registration ----------------------------------------------
+// Admin creates an invite code (shown once); the invitee redeems it for their own key (shown once).
+app.post('/api/invites', requireAdmin, (req, res) => {
+  const label = String(req.body?.label ?? '').trim().slice(0, 60);
+  const code = newSecret('inv');
+  const id = crypto.randomBytes(4).toString('hex');
+  store.invites[id] = { label, codeHash: sha256(code), createdAt: new Date().toISOString() };
+  saveStore();
+  res.json({ success: true, id, code, label });
+});
+
+app.get('/api/invites', requireAdmin, (req, res) => {
+  res.json({ success: true, invites: Object.entries(store.invites).map(([id, i]) => ({ id, label: i.label, createdAt: i.createdAt })) });
+});
+
+app.delete('/api/invites/:id', requireAdmin, (req, res) => {
+  if (!store.invites[req.params.id]) return res.status(404).json({ error: 'Invite not found' });
+  delete store.invites[req.params.id];
+  saveStore();
+  res.json({ success: true });
+});
+
+app.post('/api/register', (req, res) => {
+  if (tooManyAttempts(req.ip)) return res.status(429).json({ error: 'Too many attempts, try again later' });
+  const code = typeof req.body?.invite === 'string' ? req.body.invite.trim() : '';
+  const codeHash = sha256(code);
+  const found = code && Object.entries(store.invites).find(([, i]) => i.codeHash === codeHash);
+  if (!found) return res.status(400).json({ error: 'Invalid or already used invite code' });
+
+  const [inviteId, invite] = found;
+  const label = String(req.body?.label ?? '').trim().slice(0, 60) || invite.label || 'user';
+  const id = crypto.randomBytes(5).toString('hex');
+  const key = newSecret('zup');
+  store.users[id] = { label, keyHash: sha256(key), createdAt: new Date().toISOString() };
+  delete store.invites[inviteId]; // one use
+  saveStore();
+  res.json({ success: true, id, label, key });
+});
+
+app.get('/api/users', requireAdmin, (req, res) => {
+  const users = Object.entries(store.users).map(([id, u]) => ({ id, label: u.label, createdAt: u.createdAt, ...folderBytes(userRoot(id)) }));
+  res.json({ success: true, users });
+});
+
+// Revokes the key. Their files stay until deleted via /api/folders/u-<id>.
+app.delete('/api/users/:id', requireAdmin, (req, res) => {
+  if (!store.users[req.params.id]) return res.status(404).json({ error: 'User not found' });
+  delete store.users[req.params.id];
+  saveStore();
+  res.json({ success: true });
+});
+
 // List all stored images — newest first
 app.get('/api/images', requireApiKey, (req, res) => {
   try {
-    const files = listImages()
+    const { principal } = req;
+    const files = (principal.admin ? listImages() : fs.existsSync(path.join(UPLOAD_DIR, userRoot(principal.id))) ? listImages(userRoot(principal.id)) : [])
       .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
     const folders = [...new Set(files.map((f) => f.folder).filter(Boolean))].sort();
 
@@ -245,6 +421,9 @@ app.delete('/api/images/*', requireApiKey, (req, res) => {
 
   if (!isSafeRelPath(filename)) {
     return res.status(400).json({ error: 'Invalid filename' });
+  }
+  if (!ownsPath(req.principal, filename)) {
+    return res.status(403).json({ error: 'Not your file' });
   }
 
   const filePath = path.join(UPLOAD_DIR, filename);
@@ -281,6 +460,9 @@ app.delete('/api/folders/*', requireApiKey, (req, res) => {
   if (!folder) {
     return res.status(400).json({ error: 'Invalid folder' });
   }
+  if (!ownsPath(req.principal, folder) || (!req.principal.admin && folder === userRoot(req.principal.id))) {
+    return res.status(403).json({ error: 'Not your folder' });
+  }
 
   const dirPath = path.join(UPLOAD_DIR, folder);
   if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
@@ -312,7 +494,7 @@ app.delete('/api/folders/*', requireApiKey, (req, res) => {
 // Multer error handler (file too big, wrong type, etc.)
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError || err.message === 'Only image files are allowed') {
-    return res.status(400).json({ error: err.message });
+    return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'File too large' : err.message });
   }
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
