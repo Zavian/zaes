@@ -8,7 +8,7 @@ export const Header: React.FC<{ path: string }> = ({ path }) => {
   const { theme, toggleTheme } = useTheme();
   return (
     <header className="sticky top-0 z-40 w-full bg-[#FCFCFC]/90 dark:bg-[#111318]/90 backdrop-blur-md border-b border-gray-200 dark:border-[#262A35] transition-colors no-print">
-      <div className="max-w-[1700px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-[2200px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2.5 text-[#1A1A1A] dark:text-[#F3F4F6] hover:opacity-80 transition-opacity">
           <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
           <span className="font-bold text-lg tracking-tight">Zavian</span>

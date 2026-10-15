@@ -107,7 +107,7 @@ export default function GeneratorPage() {
 
   return (
     <div
-      className="max-w-[1700px] mx-auto px-4 sm:px-6 py-6 no-print lg:h-[calc(100dvh-4rem)] lg:flex lg:flex-col"
+      className="max-w-[2200px] mx-auto px-4 sm:px-6 py-3 no-print lg:h-[calc(100dvh-3.5rem)] lg:flex lg:flex-col"
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes('Files')) {
           e.preventDefault();
@@ -122,12 +122,11 @@ export default function GeneratorPage() {
       }}
     >
 
-      <div className="mb-5 shrink-0 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1A1A1A] dark:text-[#F3F4F6]">RPG Card Generator</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Design, preview, print and export tabletop cards. Works with save files from the original generator.</p>
+      <div className="mb-3 shrink-0 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
+          <h1 className="text-xl font-bold text-[#1A1A1A] dark:text-[#F3F4F6]">RPG Card Generator</h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Based on{' '}
+            Works with save files from the original generator. Based on{' '}
             <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href="https://github.com/crobi/rpg-cards" target="_blank" rel="noopener noreferrer">crobi's rpg-cards</a>
             . Icons by{' '}
             <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href="https://game-icons.net" target="_blank" rel="noopener noreferrer">game-icons.net</a> (CC BY 3.0).
@@ -171,7 +170,7 @@ export default function GeneratorPage() {
         </p>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[19rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)_minmax(0,1.05fr)] lg:grid-rows-[minmax(0,1fr)] lg:flex-1 lg:min-h-0">
+      <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[18rem_minmax(0,1.15fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:flex-1 lg:min-h-0">
         <aside className="lg:h-full lg:overflow-y-auto space-y-5 pr-1">
           <DeckPanel deck={deck} onImportJson={() => setDialog('import')} />
           <SettingsPanel options={options} setOptions={deck.setOptions} applyToAll={deck.applyToAll} cardCount={cards.length} />
