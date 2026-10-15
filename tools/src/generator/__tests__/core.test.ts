@@ -132,3 +132,12 @@ describe('toggleBbcode', () => {
     expect(toggleBbcode(a.value, a.start, a.end, 'b').value).toBe('ab');
   });
 });
+
+describe('contentId', () => {
+  it('is stable for identical content and changes with any edit', async () => {
+    const { contentId } = await import('../ui/storage');
+    expect(contentId('<a>', '<b>')).toBe(contentId('<a>', '<b>'));
+    expect(contentId('<a>', '<b>')).not.toBe(contentId('<a>x', '<b>'));
+    expect(contentId('ab', 'c')).not.toBe(contentId('a', 'bc'));
+  });
+});

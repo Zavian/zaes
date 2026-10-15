@@ -6,7 +6,7 @@ import { Card, DeckOptions } from '../core/types';
 import { canvasToDownload, renderCardCanvas } from './exportImage';
 import { JOIN_URL, UploadAccount, fetchAccount, formatMB, loadUploadKey, saveUploadKey, uploadCanvas } from './uploadService';
 import { Button, Input, Label, Panel, Textarea } from './primitives';
-import { loadHistory, saveHistory } from './storage';
+import { contentId, loadHistory, loadLinks, saveHistory, saveLink } from './storage';
 
 interface Props {
   card: Card | undefined;
@@ -68,14 +68,15 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
   };
 
   useEffect(() => setHistory(loadHistory()), []);
-  // New card selected: previous links no longer apply.
-  const cardKey = card ? `${card.title}` : '';
-  useEffect(() => {
-    setFront('');
-    setBack('');
-  }, [cardKey]);
-
   const sides = (): [string, string] => [renderFront(card!, options), renderBack(card!, options)];
+
+  // Show the links saved for this exact card content; an edited (or different) card has none.
+  const cardId = React.useMemo(() => (card ? contentId(...sides()) : ''), [card, options]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const saved = cardId ? loadLinks()[cardId] : undefined;
+    setFront(saved?.front ?? '');
+    setBack(saved?.back ?? '');
+  }, [cardId]);
 
   const download = async () => {
     if (!card) return;
@@ -103,6 +104,7 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
       const [fu, bu] = await Promise.all([uploadCanvas(fc, key), uploadCanvas(bc, key)]);
       setFront(fu);
       setBack(bu);
+      saveLink(cardId, { front: fu, back: bu });
       notify('Uploaded. Links are ready to copy.');
       fetchAccount(key).then(setAccount, () => undefined);
     } catch (e) {

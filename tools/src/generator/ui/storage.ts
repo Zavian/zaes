@@ -50,3 +50,40 @@ export const saveHistory = (lines: string[]) => {
     /* ignore */
   }
 };
+
+// Upload links remembered per card *content*: the id is a hash of the rendered front and back, so links come back
+// when you return to an unchanged card (even after a reload) and disappear as soon as the card is edited.
+export interface CardLinks {
+  front: string;
+  back: string;
+}
+const LINKS_KEY = 'zaes_rpg_card_links';
+
+export function contentId(front: string, back: string): string {
+  let h = 0x811c9dc5; // FNV-1a
+  for (const ch of `${front}\u0000${back}`) {
+    h ^= ch.codePointAt(0)!;
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+
+export const loadLinks = (): Record<string, CardLinks> => {
+  try {
+    const v = JSON.parse(localStorage.getItem(LINKS_KEY) || '{}');
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  } catch {
+    return {};
+  }
+};
+
+export const saveLink = (id: string, links: CardLinks) => {
+  try {
+    const all = { ...loadLinks(), [id]: links };
+    const ids = Object.keys(all);
+    for (const old of ids.slice(0, Math.max(ids.length - 300, 0))) delete all[old]; // keep the newest 300
+    localStorage.setItem(LINKS_KEY, JSON.stringify(all));
+  } catch {
+    /* ignore */
+  }
+};
