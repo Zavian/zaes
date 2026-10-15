@@ -43,7 +43,7 @@ export const ImportCardDialog: React.FC<{ open: boolean; onClose: () => void; on
     <Modal open={open} onClose={onClose} title="Import card from JSON" footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={run} disabled={!text.trim()}>Import</Button></>}>
       <p className="mb-2">Paste the JSON of a card (or an array of cards). They are added at the end of the deck.</p>
       <Textarea rows={12} value={text} onChange={(e) => { setText(e.target.value); setError(''); }} placeholder={IMPORT_EXAMPLE} wrap="off" aria-label="Card JSON" />
-      {error && <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-base text-red-600 dark:text-red-400">{error}</p>}
     </Modal>
   );
 };
@@ -115,8 +115,8 @@ export const CodeDialog: React.FC<{
           : 'JavaScript run once per card. Change the card to map it, or return false to remove it. card_has_tag(card, "tag") is available.'}
       </p>
       <Textarea rows={12} value={code} onChange={(e) => { setCode(e.target.value); setError(''); }} wrap="off" aria-label="Code" />
-      {error && <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
-      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">This runs in your browser on your own deck. Only run code you wrote or trust.</p>
+      {error && <p role="alert" className="mt-2 text-base text-red-600 dark:text-red-400">{error}</p>}
+      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">This runs in your browser on your own deck. Only run code you wrote or trust.</p>
     </Modal>
   );
 };
@@ -168,7 +168,7 @@ export const HelpDialog: React.FC<{ open: boolean; onClose: () => void }> = ({ o
             <li>Text accepts BBCode and basic HTML.</li>
             <li>Export a card as images or upload it for virtual tabletops.</li>
           </ul>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Based on <a className="underline" href="https://crobi.github.io/rpg-cards/generator/generate.html" target="_blank" rel="noopener noreferrer">crobi's rpg-cards</a>. Icons by game-icons.net (CC BY 3.0).
           </p>
         </div>
@@ -176,11 +176,11 @@ export const HelpDialog: React.FC<{ open: boolean; onClose: () => void }> = ({ o
 
       {tab === 'tags' && (
         <div className="space-y-3">
-          <p className="text-xs text-gray-500 dark:text-gray-400">{FS_NOTE.replace(/`/g, '')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{FS_NOTE.replace(/`/g, '')}</p>
           <dl className="divide-y divide-gray-200 dark:divide-[#2E333D] border border-gray-200 dark:border-[#2E333D] rounded">
             {TAG_DOCS.map((t) => (
               <div key={t.name} className="px-3 py-2">
-                <dt className="font-mono text-[13px] text-emerald-700 dark:text-emerald-400">{t.syntax}{t.fs && <span className="text-gray-400"> [| fs-1…6]</span>}</dt>
+                <dt className="font-mono text-[15px] text-emerald-700 dark:text-emerald-400">{t.syntax}{t.fs && <span className="text-gray-400"> [| fs-1…6]</span>}</dt>
                 <dd className="text-gray-600 dark:text-gray-400">{t.description}</dd>
               </div>
             ))}
@@ -192,7 +192,7 @@ export const HelpDialog: React.FC<{ open: boolean; onClose: () => void }> = ({ o
         <dl className="divide-y divide-gray-200 dark:divide-[#2E333D] border border-gray-200 dark:border-[#2E333D] rounded">
           {BBCODES.map((b) => (
             <div key={b.code} className="px-3 py-2">
-              <dt className="font-mono text-[13px] text-emerald-700 dark:text-emerald-400">{b.example}</dt>
+              <dt className="font-mono text-[15px] text-emerald-700 dark:text-emerald-400">{b.example}</dt>
               <dd className="text-gray-600 dark:text-gray-400" dangerouslySetInnerHTML={{ __html: b.explanation }} />
             </div>
           ))}

@@ -33,7 +33,7 @@ export const DeckPanel: React.FC<Props> = ({ deck }) => {
       )}
 
       {cards.length === 0 ? (
-        <p className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">No cards yet. Add one, load a file, or try the sample deck.</p>
+        <p className="p-6 text-center text-base text-gray-500 dark:text-gray-400">No cards yet. Add one, load a file, or try the sample deck.</p>
       ) : (
         <ul className="overflow-y-auto py-1 max-h-72" aria-label="Cards">
           {rows.map(({ card, index }) => {
@@ -46,7 +46,7 @@ export const DeckPanel: React.FC<Props> = ({ deck }) => {
                   onClick={() => deck.select(index)}
                   aria-current={active}
                   className={cx(
-                    'flex w-full items-center gap-2.5 pl-3 pr-14 py-1.5 text-left text-sm cursor-pointer transition-colors border-l-2',
+                    'flex w-full items-center gap-2.5 pl-3 pr-14 py-1.5 text-left text-base cursor-pointer transition-colors border-l-2',
                     active
                       ? 'bg-emerald-50 dark:bg-emerald-500/20 border-emerald-600 dark:border-emerald-400 text-[#1A1A1A] dark:text-white'
                       : 'border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1F222A]'
@@ -68,7 +68,7 @@ export const DeckPanel: React.FC<Props> = ({ deck }) => {
               </li>
             );
           })}
-          {rows.length === 0 && <li className="px-4 py-3 text-sm text-gray-500">No matches.</li>}
+          {rows.length === 0 && <li className="px-4 py-3 text-base text-gray-500">No matches.</li>}
         </ul>
       )}
     </Panel>

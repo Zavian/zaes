@@ -68,7 +68,7 @@ export const IconField: React.FC<FieldProps> = ({ value, onChange, placeholder, 
           <Grid3x3 className="w-3.5 h-3.5" /> <span className="hidden 2xl:inline">Browse</span>
         </Button>
       </div>
-      {!known && <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">No icon with that name.</p>}
+      {!known && <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">No icon with that name.</p>}
       {open && focus && suggestions.length > 0 && (
         <ul className="absolute z-20 left-11 right-24 mt-1 max-h-64 overflow-auto rounded border border-gray-200 dark:border-[#2E333D] bg-white dark:bg-[#181A20] shadow-lg">
           {suggestions.map((n) => (
@@ -80,7 +80,7 @@ export const IconField: React.FC<FieldProps> = ({ value, onChange, placeholder, 
                   onChange(n);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-2 py-1 text-left text-sm font-mono hover:bg-emerald-50 dark:hover:bg-[#20242D] cursor-pointer"
+                className="flex w-full items-center gap-2 px-2 py-1 text-left text-base font-mono hover:bg-emerald-50 dark:hover:bg-[#20242D] cursor-pointer"
               >
                 <span className="h-6 w-6 rounded grid place-items-center" style={{ backgroundColor: bg }}>
                   <img src={iconUrl(n)} alt="" className="h-4 w-4" loading="lazy" />
@@ -128,7 +128,7 @@ export const IconPicker: React.FC<{ open: boolean; onClose: () => void; onPick: 
   return (
     <Modal open={open} onClose={onClose} title="Icon browser" wide>
       <Input autoFocus placeholder="Search icons, e.g. sword, potion, skull…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search icons" />
-      <p className="mt-2 mb-3 text-xs text-gray-500 dark:text-gray-400">
+      <p className="mt-2 mb-3 text-sm text-gray-500 dark:text-gray-400">
         {names.length === 0
           ? 'Loading icons…'
           : query.trim().length < 2
@@ -147,7 +147,7 @@ export const IconPicker: React.FC<{ open: boolean; onClose: () => void; onPick: 
             <span className="h-12 w-12 rounded grid place-items-center" style={{ backgroundColor: color }}>
               <img src={iconUrl(n)} alt="" className="h-9 w-9" loading="lazy" decoding="async" />
             </span>
-            <span className="w-full truncate text-[10px] font-mono text-gray-500 dark:text-gray-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">{n}</span>
+            <span className="w-full truncate text-[12px] font-mono text-gray-500 dark:text-gray-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">{n}</span>
           </button>
         ))}
       </div>

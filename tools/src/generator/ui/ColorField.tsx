@@ -138,7 +138,7 @@ export const ColorField: React.FC<Props> = ({ value, onChange }) => {
           </div>
         )}
       </div>
-      {value && !hex && <p className="text-xs text-red-600 dark:text-red-400">Unknown color, black is used instead.</p>}
+      {value && !hex && <p className="text-sm text-red-600 dark:text-red-400">Unknown color, black is used instead.</p>}
       <div className="flex flex-wrap gap-1" role="group" aria-label="Color presets">
         {Object.entries(COLOR_PALETTE).map(([name, color]) => (
           <button

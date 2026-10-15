@@ -71,7 +71,7 @@ export const Preview: React.FC<Props> = ({ card, options }) => {
       {card ? (
           <div className="space-y-3">
             {(real || (scale > 0 && scale < 0.995)) && (
-              <div role="status" className="flex items-center justify-between gap-3 rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 text-xs text-amber-800 dark:text-amber-300">
+              <div role="status" className="flex items-center justify-between gap-3 rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 text-sm text-amber-800 dark:text-amber-300">
                 <span>{real ? 'Real size preview' : `Scaled down preview (${Math.round(scale * 100)}%)`}</span>
                 <Button size="sm" onClick={() => setReal((r) => !r)}>{real ? 'Fit to panel' : 'Show real size'}</Button>
               </div>
@@ -90,5 +90,5 @@ export const Preview: React.FC<Props> = ({ card, options }) => {
 };
 
 const Empty = ({ text }: { text: string }) => (
-  <div className="rounded border border-dashed border-gray-300 dark:border-[#2E333D] p-10 text-center text-sm text-gray-500 dark:text-gray-400">{text}</div>
+  <div className="rounded border border-dashed border-gray-300 dark:border-[#2E333D] p-10 text-center text-base text-gray-500 dark:text-gray-400">{text}</div>
 );

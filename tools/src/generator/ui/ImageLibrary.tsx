@@ -25,8 +25,8 @@ export const ImageLibrary: React.FC<Props> = ({ images, text, onInsert, onRemove
             <li key={name} className="flex items-center gap-3 px-2 py-1.5">
               <img src={images[name]} alt="" className="h-9 w-9 rounded object-contain bg-white border border-gray-200 dark:border-[#2E333D]" />
               <div className="min-w-0 flex-1">
-                <code className="font-mono text-xs text-emerald-700 dark:text-emerald-400">@{name}</code>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <code className="font-mono text-sm text-emerald-700 dark:text-emerald-400">@{name}</code>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {kb(images[name])} KB · {used ? 'used' : 'not used (removed on save)'}
                 </p>
               </div>

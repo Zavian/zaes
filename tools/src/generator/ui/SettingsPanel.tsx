@@ -44,7 +44,7 @@ export const SettingsPanel: React.FC<Props> = ({ options, setOptions, applyToAll
                 <Label htmlFor="custom-h">Height (in)</Label>
                 <Input id="custom-h" type="number" step="0.1" min="0.5" value={options.custom_height} onChange={(e) => setOptions({ custom_height: Number(e.target.value) || 3.5 })} />
               </div>
-              <p className="col-span-2 text-xs text-amber-700 dark:text-amber-400">Custom sizes are experimental.</p>
+              <p className="col-span-2 text-sm text-amber-700 dark:text-amber-400">Custom sizes are experimental.</p>
             </div>
           )}
         </div>
@@ -55,7 +55,7 @@ export const SettingsPanel: React.FC<Props> = ({ options, setOptions, applyToAll
         </div>
   
         <div className="rounded border border-gray-200 dark:border-[#2E333D] p-3 space-y-3">
-          <h3 className="text-[11px] font-mono font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Card defaults</h3>
+          <h3 className="text-[13px] font-mono font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Card defaults</h3>
           <div>
             <Label>Default icon</Label>
             <IconField label="Default icon" value={options.default_icon} onChange={(v) => setOptions({ default_icon: v })} placeholder="ace" color={options.default_color} />

@@ -157,7 +157,7 @@ export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, col
                     role="menuitem"
                     type="button"
                     onClick={() => insertTag(t.insert)}
-                    className="w-full px-3 py-1 text-left text-sm font-mono hover:bg-emerald-50 dark:hover:bg-[#20242D] cursor-pointer"
+                    className="w-full px-3 py-1 text-left text-base font-mono hover:bg-emerald-50 dark:hover:bg-[#20242D] cursor-pointer"
                   >
                     {t.name}
                   </button>
@@ -193,7 +193,7 @@ export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, col
         onClick={track}
         onSelect={track}
       />
-      <p className="mt-1 min-h-5 text-xs font-mono text-gray-500 dark:text-gray-400">
+      <p className="mt-1 min-h-5 text-sm font-mono text-gray-500 dark:text-gray-400">
         {imageError ? (
           <span className="text-red-600 dark:text-red-400">{imageError}</span>
         ) : doc ? (

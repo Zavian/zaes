@@ -167,7 +167,7 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
           <Button variant="primary" onClick={upload} disabled={!card || !!busy || !key} title={key ? `Upload front and back to ${meta.label} (Ctrl+E)` : `Add your ${meta.label} ${meta.keyLabel} first`}>
             <Upload className="w-3.5 h-3.5" /> Upload
           </Button>
-          {busy && <span className="self-center text-xs font-mono text-gray-500 dark:text-gray-400">{busy}</span>}
+          {busy && <span className="self-center text-sm font-mono text-gray-500 dark:text-gray-400">{busy}</span>}
         </div>
 
         <div className="rounded border border-gray-200 dark:border-[#2E333D] p-3 space-y-2">
@@ -181,13 +181,13 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
           </div>
 
           {host === 'imgur' && (
-            <p role="note" className="rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+            <p role="note" className="rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
               Imgur does not work in the United Kingdom (blocked because of UK legislation): images hosted there will not load for people in the UK, and uploads from the UK fail. Pick another host if that matters to you.
             </p>
           )}
 
           {key ? (
-            <div className="flex items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center justify-between gap-3 text-sm font-mono">
               <span className="text-gray-600 dark:text-gray-300">
                 {host === 'zaes' && account ? (
                   <>
@@ -219,8 +219,8 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
                 />
                 <Button variant="primary" onClick={connect} disabled={!draft.trim() || connecting}>{connecting ? 'Checking…' : host === 'zaes' ? 'Connect' : 'Save'}</Button>
               </div>
-              {connectError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{connectError}</p>}
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              {connectError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{connectError}</p>}
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {meta.helpText}{' '}
                 <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href={meta.helpUrl} target="_blank" rel="noopener noreferrer">{meta.helpLink}</a>
                 . The key stays in this browser. Downloading PNGs needs no key.
@@ -252,7 +252,7 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
         {history.length > 0 && (
           <div>
             <Label hint="newest first">Copied lines</Label>
-            <Textarea readOnly rows={Math.min(Math.max(history.length, 3), 8)} value={history.join('\n')} className="text-[11px] whitespace-pre" wrap="off" />
+            <Textarea readOnly rows={Math.min(Math.max(history.length, 3), 8)} value={history.join('\n')} className="text-[13px] whitespace-pre" wrap="off" />
             <Button variant="danger" size="sm" className="mt-2" onClick={clearHistory}>
               Clear lines
             </Button>
