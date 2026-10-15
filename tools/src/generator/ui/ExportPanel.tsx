@@ -4,9 +4,9 @@ import { toHex } from '../core/color';
 import { renderBack, renderFront } from '../core/render';
 import { Card, DeckOptions } from '../core/types';
 import { canvasToDownload, renderCardCanvas } from './exportImage';
-import { JOIN_URL, UploadAccount, UploadFormat, fetchAccount, formatMB, loadUploadKey, saveUploadKey, uploadCanvas } from './uploadService';
-import { Button, Input, Label, Panel, Select, Textarea } from './primitives';
-import { contentId, loadFormat, loadHistory, loadLinks, saveFormat, saveHistory, saveLink } from './storage';
+import { JOIN_URL, UploadAccount, fetchAccount, formatMB, loadUploadKey, saveUploadKey, uploadCanvas } from './uploadService';
+import { Button, Input, Label, Panel, Textarea } from './primitives';
+import { contentId, loadHistory, loadLinks, saveHistory, saveLink } from './storage';
 
 interface Props {
   card: Card | undefined;
@@ -23,7 +23,6 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
   const [back, setBack] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
-  const [format, setFormat] = useState<UploadFormat>('webp');
   const [key, setKey] = useState('');
   const [account, setAccount] = useState<UploadAccount | null>(null);
   const [draft, setDraft] = useState('');
@@ -68,10 +67,7 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
     setAccount(null);
   };
 
-  useEffect(() => {
-    setHistory(loadHistory());
-    setFormat(loadFormat());
-  }, []);
+  useEffect(() => setHistory(loadHistory()), []);
   const sides = (): [string, string] => [renderFront(card!, options), renderBack(card!, options)];
 
   // Show the links saved for this exact card content; an edited (or different) card has none.
@@ -105,7 +101,7 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
       const [f, b] = sides();
       const [fc, bc] = await Promise.all([renderCardCanvas(f), renderCardCanvas(b)]);
       setBusy('Uploading…');
-      const [fu, bu] = await Promise.all([uploadCanvas(fc, key, format), uploadCanvas(bc, key, format)]);
+      const [fu, bu] = await Promise.all([uploadCanvas(fc, key), uploadCanvas(bc, key)]);
       setFront(fu);
       setBack(bu);
       saveLink(cardId, { front: fu, back: bu });
@@ -168,20 +164,6 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
           <Button variant="primary" onClick={upload} disabled={!card || !!busy || !key} title={key ? 'Upload front and back to upload.zaes.dev (Ctrl+E)' : 'Connect to upload.zaes.dev first'}>
             <Upload className="w-3.5 h-3.5" /> Upload
           </Button>
-          <Select
-            aria-label="Upload format"
-            title="WebP is much smaller. Choose PNG for Tabletop Simulator, which cannot read WebP."
-            value={format}
-            onChange={(e) => {
-              const f = e.target.value as UploadFormat;
-              setFormat(f);
-              saveFormat(f);
-            }}
-            className="!w-auto"
-          >
-            <option value="webp">WebP (small)</option>
-            <option value="png">PNG (Tabletop Simulator)</option>
-          </Select>
           {busy && <span className="self-center text-xs font-mono text-gray-500 dark:text-gray-400">{busy}</span>}
         </div>
 

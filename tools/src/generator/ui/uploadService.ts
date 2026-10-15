@@ -49,15 +49,12 @@ export async function fetchAccount(key: string): Promise<UploadAccount> {
     : { label: me.label, usedBytes: me.usedBytes, quotaBytes: me.quotaBytes };
 }
 
-export type UploadFormat = 'webp' | 'png';
-
-// Uploads a card image (the server converts and compresses it) and returns its public URL.
-export async function uploadCanvas(canvas: HTMLCanvasElement, key: string, format: UploadFormat): Promise<string> {
+// Uploads a card image; the server converts it to WebP (Tabletop Simulator reads it) and returns its public URL.
+export async function uploadCanvas(canvas: HTMLCanvasElement, key: string): Promise<string> {
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
   if (!blob) throw new Error('Could not render the image');
   const body = new FormData();
   body.append('file', blob, 'card.png');
-  body.append('format', format);
   body.append('folder', 'cards');
   const json = await request('/upload', key, { method: 'POST', body });
   return json.url as string;
