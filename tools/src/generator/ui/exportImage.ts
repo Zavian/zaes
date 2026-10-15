@@ -105,6 +105,92 @@ function rasterizeBackGradient(host: HTMLElement, scale: number) {
   });
 }
 
+const SHADOW_LAYER_RE = /drop-shadow\((-?[\d.]+)px (-?[\d.]+)px ([\d.]+)px (rgba\([^)]*\))\)/g;
+
+// Draw `img` inside the box (x, y, w, h) the way `object-fit: contain` does.
+function drawContained(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+  const k = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+  const dw = img.naturalWidth * k;
+  const dh = img.naturalHeight * k;
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+}
+
+function roundedClip(ctx: CanvasRenderingContext2D, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.roundRect(0, 0, w, h, Math.min(r, w / 2, h / 2));
+  ctx.clip();
+}
+
+// html2canvas ignores `filter` (shadow/glow) and `mask-image` (fill=), so those picture blocks are painted to a
+// canvas here, shadows included, and swapped in as one image.
+async function bakeImageEffects(host: HTMLElement, scale: number) {
+  const blocks = Array.from(host.querySelectorAll<HTMLElement>('.card-image-block')).filter(
+    (el) => el.querySelector('.card-image-fill') || el.style.filter
+  );
+  await Promise.all(
+    blocks.map(async (block) => {
+      const picture = block.querySelector<HTMLImageElement>('img.card-image');
+      if (!picture) return;
+      const layers = Array.from((block.getAttribute('style') ?? '').matchAll(SHADOW_LAYER_RE), (m) => ({
+        x: Number(m[1]) * scale,
+        y: Number(m[2]) * scale,
+        blur: Number(m[3]) * scale,
+        color: m[4],
+      }));
+      const box = block.getBoundingClientRect();
+      const inner = picture.getBoundingClientRect();
+      const fill = block.querySelector<HTMLElement>('.card-image-fill');
+      try {
+        const source = await loadImage(picture.src);
+        const w = Math.round(box.width * scale);
+        const h = Math.round(box.height * scale);
+        const pad = Math.ceil(Math.max(0, ...layers.map((l) => Math.abs(l.x) + Math.abs(l.y) + l.blur * 1.5)));
+
+        const content = document.createElement('canvas');
+        content.width = w;
+        content.height = h;
+        const cctx = content.getContext('2d')!;
+        cctx.save();
+        roundedClip(cctx, w, h, parseFloat(getComputedStyle(block).borderTopLeftRadius || '0') * scale);
+        drawContained(cctx, source, (inner.left - box.left) * scale, (inner.top - box.top) * scale, inner.width * scale, inner.height * scale);
+        if (fill) {
+          cctx.globalCompositeOperation = 'source-in';
+          cctx.fillStyle = getComputedStyle(fill).backgroundColor;
+          cctx.fillRect(0, 0, w, h);
+        }
+        cctx.restore();
+
+        // Each drop-shadow acts on the result of the one before, like the CSS filter chain.
+        let current = document.createElement('canvas');
+        current.width = w + pad * 2;
+        current.height = h + pad * 2;
+        current.getContext('2d')!.drawImage(content, pad, pad);
+        for (const l of layers) {
+          const next = document.createElement('canvas');
+          next.width = current.width;
+          next.height = current.height;
+          const nctx = next.getContext('2d')!;
+          nctx.shadowColor = l.color;
+          nctx.shadowBlur = l.blur;
+          nctx.shadowOffsetX = l.x;
+          nctx.shadowOffsetY = l.y;
+          nctx.drawImage(current, 0, 0);
+          current = next;
+        }
+
+        const baked = document.createElement('img');
+        baked.src = current.toDataURL('image/png');
+        const px = (v: number) => `${v / scale}px`;
+        baked.style.cssText = `position:absolute;display:block;max-width:none;left:${px(-pad)};top:${px(-pad)};width:${px(current.width)};height:${px(current.height)}`;
+        block.style.cssText += `;position:relative;overflow:visible;filter:none;width:${box.width}px;height:${box.height}px`;
+        block.replaceChildren(baked);
+      } catch {
+        /* leave the block as it is if the picture cannot be read */
+      }
+    })
+  );
+}
+
 // Render a card's HTML at natural size, off-screen, so the result is crisp regardless of preview scaling.
 export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLCanvasElement> {
   // html2canvas paints the card from the live layout, so line wrapping and spacing match the preview (and the
@@ -118,6 +204,7 @@ export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLC
     fitTitles(host);
     await prescaleIcons(host, scale);
     rasterizeBackGradient(host, scale);
+    await bakeImageEffects(host, scale);
     // html2canvas drops the tapered rule SVGs; an <img> of the same SVG is drawn reliably.
     host.querySelectorAll<SVGElement>('svg.card-ruler').forEach((svg) => {
       const box = svg.getBoundingClientRect();
