@@ -54,7 +54,7 @@ const pages: Page[] = [
       name: t.title,
       url: `${SITE_URL}${t.path}`,
       description: t.description,
-      applicationCategory: 'GameApplication',
+      applicationCategory: t.category ?? 'GameApplication',
       operatingSystem: 'Any (modern web browser)',
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
       author: { '@type': 'Person', name: 'Zavian' },
