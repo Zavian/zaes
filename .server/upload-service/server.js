@@ -120,9 +120,23 @@ function authenticate(req) {
   return id ? { admin: false, id, label: store.users[id].label } : null;
 }
 
+// Remember when a key was last used (the admin view shows it). Written at most every 5 minutes per user.
+const TOUCH_EVERY_MS = 5 * 60 * 1000;
+function touchUser(id) {
+  const user = store.users[id];
+  if (!user || Date.now() - new Date(user.lastUsedAt || 0).getTime() < TOUCH_EVERY_MS) return;
+  user.lastUsedAt = new Date().toISOString();
+  try {
+    saveStore();
+  } catch (err) {
+    console.error('Failed to record key use:', err.message);
+  }
+}
+
 function requireApiKey(req, res, next) {
   req.principal = authenticate(req);
   if (!req.principal) return res.status(401).json({ error: 'Unauthorized' });
+  if (!req.principal.admin) touchUser(req.principal.id);
   next();
 }
 
@@ -388,8 +402,8 @@ app.post('/api/register', (req, res) => {
 });
 
 app.get('/api/users', requireAdmin, (req, res) => {
-  const users = Object.entries(store.users).map(([id, u]) => ({ id, label: u.label, createdAt: u.createdAt, ...folderBytes(userRoot(id)) }));
-  res.json({ success: true, users });
+  const users = Object.entries(store.users).map(([id, u]) => ({ id, label: u.label, createdAt: u.createdAt, lastUsedAt: u.lastUsedAt || null, ...folderBytes(userRoot(id)) }));
+  res.json({ success: true, quotaBytes: USER_QUOTA_BYTES, users });
 });
 
 // Revokes the key. Their files stay until deleted via /api/folders/u-<id>.
