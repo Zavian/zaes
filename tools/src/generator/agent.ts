@@ -1,17 +1,11 @@
 import { useEffect, useRef } from 'react';
+import { registerPageAgent } from '../agent';
 import { normalizeCard } from './core/normalize';
 import { TAG_DOCS } from './core/tags';
 import { Card } from './core/types';
 import type { Deck } from './ui/useDeck';
 
-// window.agent: a programmatic deck API for automation (MCP via webwrap). It only exists when the page runs
-// inside a webwrap shell started with debug enabled (the shell sets window.__webwrap = { debug: true }).
-declare global {
-  interface Window {
-    __webwrap?: { debug?: boolean };
-    agent?: Record<string, unknown>;
-  }
-}
+// Deck functions for window.agent (see ../agent.ts for the gating and the site-level functions).
 
 const DOCS = {
   card: {
@@ -32,7 +26,6 @@ const DOCS = {
   },
   tags: TAG_DOCS.map((t) => ({ syntax: t.syntax, description: t.description })),
   functions: {
-    describe: '() -> this document',
     listCards: '() -> [{index,title,count,color,icon,tags,contents,back_contents}]',
     getCard: '(index) -> card',
     addCard: '(card) -> index',
@@ -69,8 +62,7 @@ export function useAgentApi(deck: Deck) {
       if (!Number.isInteger(i) || i < 0 || i >= latest.current.length) throw new Error(`No card at index ${i} (deck has ${latest.current.length})`);
       return i;
     };
-    window.agent = {
-      describe: () => DOCS,
+    const unregister = registerPageAgent(DOCS, {
       listCards: () => latest.current.map(view),
       getCard: (i: number) => view(latest.current[at(i)], i),
       addCard: (card: unknown) => {
@@ -109,9 +101,7 @@ export function useAgentApi(deck: Deck) {
         set(replace ? incoming : [...latest.current, ...incoming]);
         return latest.current.length;
       },
-    };
-    return () => {
-      delete window.agent;
-    };
+    });
+    return unregister;
   }, [deck.ready]);
 }
