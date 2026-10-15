@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CircleHelp, Download, Filter, FolderOpen, Sparkles, ArrowDownAZ, Trash2 } from 'lucide-react';
 import './cards.css';
 import { DeckParseError, cleanImportedCard, parseDeck, serializeDeck } from './core/normalize';
 import sample from './sample.json';
@@ -7,12 +6,18 @@ import { CardEditor } from './ui/CardEditor';
 import { DeckPanel } from './ui/DeckPanel';
 import { ExportPanel } from './ui/ExportPanel';
 import { Preview } from './ui/Preview';
+import { DeckActions } from './ui/DeckActions';
 import { SettingsPanel } from './ui/SettingsPanel';
 import { CodeDialog, HelpDialog, ImportCardDialog } from './ui/dialogs';
 import { Button, Panel } from './ui/primitives';
 import { useDeck } from './ui/useDeck';
 
 const CARD_FONTS = 'https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap';
+
+const typingInField = (target: EventTarget | null) => {
+  const el = target as HTMLElement | null;
+  return !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
+};
 
 // Matches the `xl` breakpoint, where the preview gets its own column. Only one copy of the preview/export is mounted.
 function useWideScreen() {
@@ -79,6 +84,9 @@ export default function GeneratorPage() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, [deck.cards]);
 
+  const dialogRef = useRef(dialog);
+  dialogRef.current = dialog;
+
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -88,8 +96,11 @@ export default function GeneratorPage() {
       else if (mod && key === 'e') { e.preventDefault(); setUploadSignal((n) => n + 1); }
       else if (e.altKey && key === 'n') { e.preventDefault(); deck.addCard(); }
       else if (e.altKey && key === 'd') { e.preventDefault(); deck.duplicateCard(); }
-      else if (e.altKey && e.key === 'ArrowUp') { e.preventDefault(); deck.select(Math.max(0, deck.selected - 1)); }
-      else if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); deck.select(Math.min(deck.cards.length - 1, deck.selected + 1)); }
+      else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && !mod && !e.shiftKey && !typingInField(e.target) && !dialogRef.current) {
+        // Plain up/down steps through the cards unless you are typing or picking in a field.
+        e.preventDefault();
+        deck.select(e.key === 'ArrowUp' ? Math.max(0, deck.selected - 1) : Math.min(deck.cards.length - 1, deck.selected + 1));
+      }
       else if (e.key === 'F1') { e.preventDefault(); setDialog('help'); }
     };
     window.addEventListener('keydown', onKey);
@@ -103,7 +114,7 @@ export default function GeneratorPage() {
 
   return (
     <div className="max-w-[2200px] mx-auto px-4 sm:px-6 py-3 no-print lg:h-[calc(100dvh-3.5rem)] lg:flex lg:flex-col">
-      <div className="mb-3 shrink-0 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="mb-3 shrink-0">
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
           <h1 className="text-xl font-bold text-[#1A1A1A] dark:text-[#F3F4F6]">RPG Card Generator</h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -112,35 +123,6 @@ export default function GeneratorPage() {
             . Icons by{' '}
             <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href="https://game-icons.net" target="_blank" rel="noopener noreferrer">game-icons.net</a> (CC BY 3.0).
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Deck actions">
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".json,application/json"
-            multiple
-            hidden
-            onChange={(e) => {
-              if (e.target.files) void loadFiles(e.target.files);
-              e.target.value = '';
-            }}
-          />
-          <Button onClick={() => fileInput.current?.click()}><FolderOpen className="w-3.5 h-3.5" /> Load</Button>
-          <Button onClick={save} disabled={!cards.length} title="Save deck as JSON (Ctrl+S)"><Download className="w-3.5 h-3.5" /> Save</Button>
-          <Button onClick={addSample}><Sparkles className="w-3.5 h-3.5" /> Sample</Button>
-          <span className="h-5 w-px bg-gray-200 dark:bg-[#2E333D]" />
-          <Button onClick={() => setDialog('sort')} disabled={cards.length < 2}><ArrowDownAZ className="w-3.5 h-3.5" /> Sort</Button>
-          <Button onClick={() => setDialog('filter')} disabled={!cards.length}><Filter className="w-3.5 h-3.5" /> Filter</Button>
-          <Button onClick={() => setDialog('help')} aria-label="Help (F1)" title="Help (F1)"><CircleHelp className="w-3.5 h-3.5" /></Button>
-          <Button
-            variant="danger"
-            onClick={() => cards.length && confirm(`Delete all ${cards.length} cards? This cannot be undone.`) && deck.clear()}
-            disabled={!cards.length}
-            aria-label="Delete all cards"
-            title="Delete all cards"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
         </div>
       </div>
 
@@ -152,6 +134,27 @@ export default function GeneratorPage() {
 
       <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[18rem_minmax(0,1.15fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:flex-1 lg:min-h-0">
         <aside className="lg:h-full lg:overflow-y-auto space-y-5 pr-1">
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".json,application/json"
+            multiple
+            hidden
+            onChange={(e) => {
+              if (e.target.files) void loadFiles(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          <DeckActions
+            cardCount={cards.length}
+            onLoad={() => fileInput.current?.click()}
+            onSave={save}
+            onSample={addSample}
+            onSort={() => setDialog('sort')}
+            onFilter={() => setDialog('filter')}
+            onHelp={() => setDialog('help')}
+            onClear={() => cards.length && confirm(`Delete all ${cards.length} cards? This cannot be undone.`) && deck.clear()}
+          />
           <DeckPanel deck={deck} onImportJson={() => setDialog('import')} />
           <SettingsPanel options={options} setOptions={deck.setOptions} applyToAll={deck.applyToAll} cardCount={cards.length} />
         </aside>

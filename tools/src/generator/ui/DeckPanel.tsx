@@ -65,6 +65,7 @@ export const DeckPanel: React.FC<Props> = ({ deck, onImportJson }) => {
               <li key={index} className="group relative">
                 <button
                   type="button"
+                  ref={active ? (el) => el?.scrollIntoView?.({ block: 'nearest' }) : undefined}
                   onClick={() => deck.select(index)}
                   aria-current={active}
                   className={cx(
