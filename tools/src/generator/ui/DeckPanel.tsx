@@ -1,15 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Copy, FileJson, Plus, Search, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Search } from 'lucide-react';
 import { toHex } from '../core/color';
 import { Deck } from './useDeck';
 import { Button, Input, Panel, cx } from './primitives';
 
 interface Props {
   deck: Deck;
-  onImportJson: () => void;
 }
 
-export const DeckPanel: React.FC<Props> = ({ deck, onImportJson }) => {
+export const DeckPanel: React.FC<Props> = ({ deck }) => {
   const { cards, selected, options } = deck;
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
@@ -26,34 +25,12 @@ export const DeckPanel: React.FC<Props> = ({ deck, onImportJson }) => {
       title={`Deck · ${cards.length}`}
       className="flex flex-col"
     >
-      <div className="p-3 space-y-3 border-b border-gray-200 dark:border-[#2E333D]">
-        <div className="grid grid-cols-3 gap-2">
-          <Button variant="primary" onClick={() => deck.addCard()} title="New card (Alt+N)">
-            <Plus className="w-3.5 h-3.5" /> New
-          </Button>
-          <Button onClick={deck.duplicateCard} disabled={!cards.length} title="Duplicate (Alt+D)">
-            <Copy className="w-3.5 h-3.5" /> Copy
-          </Button>
-          <Button
-            variant="danger"
-            disabled={!cards.length}
-            onClick={() => {
-              if (deck.current && confirm(`Delete “${deck.current.title || 'Untitled'}”?`)) deck.deleteCard();
-            }}
-          >
-            <Trash2 className="w-3.5 h-3.5" /> Delete
-          </Button>
+      {cards.length > 6 && (
+        <div className="relative p-3 border-b border-gray-200 dark:border-[#2E333D]">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" aria-hidden />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or tag" aria-label="Search cards" className="pl-8" />
         </div>
-        <Button className="w-full" onClick={onImportJson}>
-          <FileJson className="w-3.5 h-3.5" /> Import card by JSON
-        </Button>
-        {cards.length > 6 && (
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" aria-hidden />
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or tag" aria-label="Search cards" className="pl-8" />
-          </div>
-        )}
-      </div>
+      )}
 
       {cards.length === 0 ? (
         <p className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">No cards yet. Add one, load a file, or try the sample deck.</p>
