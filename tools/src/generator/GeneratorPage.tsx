@@ -119,7 +119,7 @@ export default function GeneratorPage() {
       <div className="mb-3 shrink-0">
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
           <h1 className="text-xl font-bold text-[#1A1A1A] dark:text-[#F3F4F6]">RPG Card Generator</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Based on{' '}
             <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href="https://github.com/crobi/rpg-cards" target="_blank" rel="noopener noreferrer">crobi's rpg-cards</a>
             . Icons by{' '}
@@ -129,7 +129,7 @@ export default function GeneratorPage() {
       </div>
 
       {deck.saveFailed && (
-        <p role="alert" className="mb-4 rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
+        <p role="alert" className="mb-4 rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-base text-amber-800 dark:text-amber-300">
           This browser is not keeping your deck (storage is full or blocked). Use Save to keep a copy.
         </p>
       )}
@@ -198,7 +198,7 @@ export default function GeneratorPage() {
       </div>
 
       {toast && (
-        <div role="status" className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[90vw] rounded border border-gray-200 dark:border-[#2E333D] bg-white dark:bg-[#181A20] px-4 py-2 text-sm shadow-lg text-gray-700 dark:text-gray-200">
+        <div role="status" className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[90vw] rounded border border-gray-200 dark:border-[#2E333D] bg-white dark:bg-[#181A20] px-4 py-2 text-base shadow-lg text-gray-700 dark:text-gray-200">
           {toast}
         </div>
       )}

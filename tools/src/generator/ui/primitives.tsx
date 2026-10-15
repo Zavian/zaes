@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 export const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ');
 
 const base =
-  'inline-flex items-center justify-center gap-1.5 rounded border text-xs font-mono transition-colors cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600';
+  'inline-flex items-center justify-center gap-1.5 rounded border text-sm font-mono transition-colors cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600';
 const variants = {
   primary: 'bg-emerald-700 dark:bg-emerald-700 border-emerald-700 dark:border-emerald-600 text-white hover:bg-emerald-800 dark:hover:bg-emerald-600',
   secondary:
@@ -35,7 +35,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
 });
 
 const field =
-  'w-full rounded border border-gray-200 dark:border-[#2E333D] bg-white dark:bg-[#111318] px-2.5 py-1.5 text-sm text-[#1A1A1A] dark:text-[#F3F4F6] placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-1 focus:ring-emerald-600/40 transition-colors';
+  'w-full rounded border border-gray-200 dark:border-[#2E333D] bg-white dark:bg-[#111318] px-2.5 py-1.5 text-base text-[#1A1A1A] dark:text-[#F3F4F6] placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-1 focus:ring-emerald-600/40 transition-colors';
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function Input(
   { className, ...rest },
@@ -50,7 +50,7 @@ export const Select = ({ className, ...rest }: React.SelectHTMLAttributes<HTMLSe
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
   function Textarea({ className, ...rest }, ref) {
-    return <textarea ref={ref} className={cx(field, 'font-mono text-[13px] leading-relaxed resize-y', className)} {...rest} />;
+    return <textarea ref={ref} className={cx(field, 'font-mono text-[15px] leading-relaxed resize-y', className)} {...rest} />;
   }
 );
 
@@ -60,7 +60,7 @@ export const Label: React.FC<{ children: React.ReactNode; htmlFor?: string; hint
   hint,
   className,
 }) => (
-  <label htmlFor={htmlFor} className={cx('block mb-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400', className)}>
+  <label htmlFor={htmlFor} className={cx('block mb-1 text-[13px] font-mono font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400', className)}>
     {children}
     {hint && <span className="ml-2 normal-case tracking-normal font-normal text-gray-400 dark:text-gray-500">{hint}</span>}
   </label>
@@ -72,7 +72,7 @@ export const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void
   label,
   id,
 }) => (
-  <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-600 dark:text-gray-300 select-none">
+  <label className="inline-flex items-center gap-2 cursor-pointer text-base text-gray-600 dark:text-gray-300 select-none">
     <button
       id={id}
       type="button"
@@ -99,7 +99,7 @@ export const Panel: React.FC<{ title?: string; actions?: React.ReactNode; childr
   <section className={cx('rounded border border-gray-200 dark:border-[#2E333D] bg-white dark:bg-[#181A20]', className)}>
     {(title || actions) && (
       <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-200 dark:border-[#2E333D]">
-        <h2 className="text-[11px] font-mono font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">{title}</h2>
+        <h2 className="text-[13px] font-mono font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">{title}</h2>
         {actions}
       </div>
     )}
@@ -149,7 +149,7 @@ export const Modal: React.FC<{
             <X className="w-4 h-4" />
           </Button>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">{children}</div>
+        <div className="px-5 py-4 text-base text-gray-700 dark:text-gray-300">{children}</div>
         {footer && <div className="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-gray-200 dark:border-[#2E333D]">{footer}</div>}
       </div>
     </div>
@@ -157,7 +157,7 @@ export const Modal: React.FC<{
 };
 
 export const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <kbd className="px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3a4050] bg-gray-50 dark:bg-[#111318] text-[11px] font-mono text-gray-600 dark:text-gray-300">
+  <kbd className="px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3a4050] bg-gray-50 dark:bg-[#111318] text-[13px] font-mono text-gray-600 dark:text-gray-300">
     {children}
   </kbd>
 );

@@ -35,7 +35,7 @@ export const CardEditor: React.FC<Props> = ({ card, options, onChange, onNew, on
       }
     >
       <div className="p-4 space-y-5">
-        <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
+        <div className="grid gap-4 sm:grid-cols-[1fr_11rem]">
           <div>
             <Label htmlFor="card-title">Name</Label>
             <Input id="card-title" value={card.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Title" />
