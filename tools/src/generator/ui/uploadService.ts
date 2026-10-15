@@ -61,3 +61,91 @@ export async function uploadCanvas(canvas: HTMLCanvasElement, key: string): Prom
 }
 
 export const formatMB = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`;
+
+// ---------------------------------------------------------------------------
+// Other image hosts, used with the person's own key
+// ---------------------------------------------------------------------------
+export type HostId = 'zaes' | 'imgur' | 'imgbb';
+
+export const HOSTS: Record<HostId, { label: string; keyLabel: string; placeholder: string; helpText: string; helpUrl: string; helpLink: string }> = {
+  zaes: { label: 'upload.zaes.dev', keyLabel: 'API key', placeholder: 'zup_…', helpText: 'Invite only. Got an invite code?', helpLink: 'Create your key', helpUrl: JOIN_URL },
+  imgur: {
+    label: 'Imgur',
+    keyLabel: 'Client ID',
+    placeholder: 'Imgur Client ID',
+    helpText: 'Register an application (anonymous usage) to get your own Client ID.',
+    helpLink: 'Register at Imgur',
+    helpUrl: 'https://api.imgur.com/oauth2/addclient',
+  },
+  imgbb: { label: 'imgbb', keyLabel: 'API key', placeholder: 'imgbb API key', helpText: 'Free account, one key.', helpLink: 'Get an imgbb key', helpUrl: 'https://api.imgbb.com/' },
+};
+
+const HOST_KEY = 'zaes_upload_host';
+const hostKeyName = (h: HostId) => (h === 'zaes' ? KEY_STORAGE : `zaes_upload_key_${h}`);
+
+export const loadHost = (): HostId => {
+  try {
+    const h = localStorage.getItem(HOST_KEY);
+    return h === 'imgur' || h === 'imgbb' ? h : 'zaes';
+  } catch {
+    return 'zaes';
+  }
+};
+export const saveHost = (h: HostId) => {
+  try {
+    localStorage.setItem(HOST_KEY, h);
+  } catch {
+    /* ignore */
+  }
+};
+export const loadHostKey = (h: HostId): string => {
+  try {
+    return localStorage.getItem(hostKeyName(h)) ?? '';
+  } catch {
+    return '';
+  }
+};
+export const saveHostKey = (h: HostId, key: string) => {
+  try {
+    if (key) localStorage.setItem(hostKeyName(h), key);
+    else localStorage.removeItem(hostKeyName(h));
+  } catch {
+    /* ignore */
+  }
+};
+
+async function thirdParty(url: string, init: RequestInit, pick: (json: any) => string | undefined, errorOf: (json: any) => string | undefined) {
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch {
+    throw new Error('Could not reach the image host (blocked, offline, or not available in your country).');
+  }
+  const json = await res.json().catch(() => null);
+  const link = res.ok ? pick(json) : undefined;
+  if (!link) throw new Error(errorOf(json) || `The image host refused the upload (${res.status}).`);
+  return link;
+}
+
+// Uploads a card image to the chosen host and returns its URL. Third-party hosts get PNG (no transcoding surprises).
+export async function uploadCard(host: HostId, canvas: HTMLCanvasElement, key: string): Promise<string> {
+  if (host === 'zaes') return uploadCanvas(canvas, key);
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+  if (!blob) throw new Error('Could not render the image');
+  const body = new FormData();
+  body.append('image', blob, 'card.png');
+  if (host === 'imgur') {
+    return thirdParty(
+      'https://api.imgur.com/3/image',
+      { method: 'POST', headers: { Authorization: `Client-ID ${key}` }, body },
+      (j) => j?.data?.link,
+      (j) => (typeof j?.data?.error === 'string' ? j.data.error : j?.data?.error?.message)
+    );
+  }
+  return thirdParty(
+    `https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}`,
+    { method: 'POST', body },
+    (j) => j?.data?.url,
+    (j) => j?.error?.message
+  );
+}

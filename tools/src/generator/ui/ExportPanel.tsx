@@ -4,8 +4,8 @@ import { toHex } from '../core/color';
 import { renderBack, renderFront } from '../core/render';
 import { Card, DeckOptions } from '../core/types';
 import { canvasToDownload, renderCardCanvas } from './exportImage';
-import { JOIN_URL, UploadAccount, fetchAccount, formatMB, loadUploadKey, saveUploadKey, uploadCanvas } from './uploadService';
-import { Button, Input, Label, Panel, Textarea } from './primitives';
+import { HOSTS, HostId, UploadAccount, fetchAccount, formatMB, loadHost, loadHostKey, saveHost, saveHostKey, uploadCard } from './uploadService';
+import { Button, Input, Label, Panel, Select, Textarea } from './primitives';
 import { contentId, loadHistory, loadLinks, saveHistory, saveLink } from './storage';
 
 interface Props {
@@ -23,25 +23,29 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
   const [back, setBack] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
-  const [key, setKey] = useState('');
+  const [host, setHost] = useState<HostId>('zaes');
+  const [keys, setKeys] = useState<Record<HostId, string>>({ zaes: '', imgur: '', imgbb: '' });
   const [account, setAccount] = useState<UploadAccount | null>(null);
   const [draft, setDraft] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState('');
+  const key = keys[host];
+  const meta = HOSTS[host];
 
-  // Reconnect with the key saved in this browser.
+  // Restore the chosen host and the keys saved in this browser (and re-check the upload.zaes.dev one).
   useEffect(() => {
-    const saved = loadUploadKey();
-    if (!saved) return;
-    fetchAccount(saved)
-      .then((a) => {
-        setKey(saved);
-        setAccount(a);
-      })
-      .catch(() => {
-        /* offline or revoked: stay disconnected, the saved key is kept until the user disconnects */
-      });
+    setHost(loadHost());
+    setKeys({ zaes: loadHostKey('zaes'), imgur: loadHostKey('imgur'), imgbb: loadHostKey('imgbb') });
+    const saved = loadHostKey('zaes');
+    if (saved) fetchAccount(saved).then(setAccount, () => undefined); // offline or revoked: the key stays until disconnected
   }, []);
+
+  const chooseHost = (h: HostId) => {
+    setHost(h);
+    saveHost(h);
+    setDraft('');
+    setConnectError('');
+  };
 
   const connect = async () => {
     const candidate = draft.trim();
@@ -49,10 +53,9 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
     setConnecting(true);
     setConnectError('');
     try {
-      const a = await fetchAccount(candidate);
-      saveUploadKey(candidate);
-      setKey(candidate);
-      setAccount(a);
+      if (host === 'zaes') setAccount(await fetchAccount(candidate)); // only our own host can check a key without uploading
+      saveHostKey(host, candidate);
+      setKeys((k) => ({ ...k, [host]: candidate }));
       setDraft('');
     } catch (e) {
       setConnectError((e as Error).message);
@@ -62,9 +65,9 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
   };
 
   const disconnect = () => {
-    saveUploadKey('');
-    setKey('');
-    setAccount(null);
+    saveHostKey(host, '');
+    setKeys((k) => ({ ...k, [host]: '' }));
+    if (host === 'zaes') setAccount(null);
   };
 
   useEffect(() => setHistory(loadHistory()), []);
@@ -95,18 +98,18 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
 
   const upload = async () => {
     if (!card) return;
-    if (!key) return notify('Connect to upload.zaes.dev first (Export panel).');
+    if (!key) return notify(`Add your ${meta.label} ${meta.keyLabel} first (Export panel).`);
     setBusy('Rendering…');
     try {
       const [f, b] = sides();
       const [fc, bc] = await Promise.all([renderCardCanvas(f), renderCardCanvas(b)]);
       setBusy('Uploading…');
-      const [fu, bu] = await Promise.all([uploadCanvas(fc, key), uploadCanvas(bc, key)]);
+      const [fu, bu] = await Promise.all([uploadCard(host, fc, key), uploadCard(host, bc, key)]);
       setFront(fu);
       setBack(bu);
       saveLink(cardId, { front: fu, back: bu });
       notify('Uploaded. Links are ready to copy.');
-      fetchAccount(key).then(setAccount, () => undefined);
+      if (host === 'zaes') fetchAccount(key).then(setAccount, () => undefined);
     } catch (e) {
       notify(`Upload failed: ${(e as Error).message}`);
     } finally {
@@ -161,26 +164,47 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
           <Button onClick={download} disabled={!card || !!busy}>
             <Download className="w-3.5 h-3.5" /> Download PNGs
           </Button>
-          <Button variant="primary" onClick={upload} disabled={!card || !!busy || !key} title={key ? 'Upload front and back to upload.zaes.dev (Ctrl+E)' : 'Connect to upload.zaes.dev first'}>
+          <Button variant="primary" onClick={upload} disabled={!card || !!busy || !key} title={key ? `Upload front and back to ${meta.label} (Ctrl+E)` : `Add your ${meta.label} ${meta.keyLabel} first`}>
             <Upload className="w-3.5 h-3.5" /> Upload
           </Button>
           {busy && <span className="self-center text-xs font-mono text-gray-500 dark:text-gray-400">{busy}</span>}
         </div>
 
         <div className="rounded border border-gray-200 dark:border-[#2E333D] p-3 space-y-2">
-          {key && account ? (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="upload-host" className="!mb-0 shrink-0">Host</Label>
+            <Select id="upload-host" value={host} onChange={(e) => chooseHost(e.target.value as HostId)}>
+              {(Object.keys(HOSTS) as HostId[]).map((h) => (
+                <option key={h} value={h}>{HOSTS[h].label}</option>
+              ))}
+            </Select>
+          </div>
+
+          {host === 'imgur' && (
+            <p role="note" className="rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+              Imgur does not work in the United Kingdom (blocked because of UK legislation): images hosted there will not load for people in the UK, and uploads from the UK fail. Pick another host if that matters to you.
+            </p>
+          )}
+
+          {key ? (
             <div className="flex items-center justify-between gap-3 text-xs font-mono">
               <span className="text-gray-600 dark:text-gray-300">
-                Connected to upload.zaes.dev as <strong>{account.label}</strong>
-                {account.quotaBytes > 0 && <span className="text-gray-400 dark:text-gray-500"> · {formatMB(account.usedBytes)} / {formatMB(account.quotaBytes)}</span>}
+                {host === 'zaes' && account ? (
+                  <>
+                    Connected to upload.zaes.dev as <strong>{account.label}</strong>
+                    {account.quotaBytes > 0 && <span className="text-gray-400 dark:text-gray-500"> · {formatMB(account.usedBytes)} / {formatMB(account.quotaBytes)}</span>}
+                  </>
+                ) : (
+                  <>Using your {meta.label} {meta.keyLabel}</>
+                )}
               </span>
-              <Button size="sm" variant="ghost" onClick={disconnect} title="Forget the API key in this browser">
-                <Link2Off className="w-3.5 h-3.5" /> Disconnect
+              <Button size="sm" variant="ghost" onClick={disconnect} title="Forget the key in this browser">
+                <Link2Off className="w-3.5 h-3.5" /> Remove
               </Button>
             </div>
           ) : (
             <>
-              <Label htmlFor="upload-key" hint="your personal key for upload.zaes.dev">Connect to upload.zaes.dev</Label>
+              <Label htmlFor="upload-key" hint={`your own ${meta.label} ${meta.keyLabel}`}>{meta.keyLabel}</Label>
               <div className="flex gap-2">
                 <Input
                   id="upload-key"
@@ -190,15 +214,16 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && void connect()}
-                  placeholder="zup_…"
+                  placeholder={meta.placeholder}
                   className="font-mono"
                 />
-                <Button variant="primary" onClick={connect} disabled={!draft.trim() || connecting}>{connecting ? 'Checking…' : 'Connect'}</Button>
+                <Button variant="primary" onClick={connect} disabled={!draft.trim() || connecting}>{connecting ? 'Checking…' : host === 'zaes' ? 'Connect' : 'Save'}</Button>
               </div>
               {connectError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{connectError}</p>}
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Uploading is invite only. Got an invite code?{' '}
-                <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href={JOIN_URL} target="_blank" rel="noopener noreferrer">Create your key</a>. Downloading PNGs needs no key.
+                {meta.helpText}{' '}
+                <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href={meta.helpUrl} target="_blank" rel="noopener noreferrer">{meta.helpLink}</a>
+                . The key stays in this browser. Downloading PNGs needs no key.
               </p>
             </>
           )}
