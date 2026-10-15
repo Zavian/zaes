@@ -82,6 +82,7 @@ export const deckCardCount = (cards: Card[], options: DeckOptions) =>
 const CARD_IN: Record<string, [number, number]> = {
   '225x35': [2.25, 3.5],
   '25x35': [2.5, 3.5],
+  '30x50': [3, 5],
   '35x50': [3.5, 5],
   '75x50': [7.5, 5],
   '29x29': [2.9, 2.9],

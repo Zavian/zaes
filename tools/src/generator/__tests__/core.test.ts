@@ -104,6 +104,7 @@ describe('print grid', () => {
     expect(fitGrid(big)).toEqual({ cols: 1, rows: 2 });
     expect(gridOverflows(big)).toBe(false);
     expect(gridOverflows(DEFAULT_OPTIONS)).toBe(false);
+    expect(fitGrid(DEFAULT_OPTIONS)).toEqual({ cols: 2, rows: 2 });
     expect(gridOverflows({ ...DEFAULT_OPTIONS, card_size: '75x50', page_rows: 3, page_columns: 3 })).toBe(true);
     expect(fitGrid({ ...DEFAULT_OPTIONS, card_size: '25x35' })).toEqual({ cols: 3, rows: 3 });
   });

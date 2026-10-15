@@ -170,12 +170,14 @@
 /* Card sizes */
 .card-size-225x35 { width: 2.25in; height: 3.5in; }
 .card-size-25x35 { width: 2.5in; height: 3.5in; }
+.card-size-30x50 { width: 3in; height: 5in; }
 .card-size-35x50 { width: 3.5in; height: 5in; }
 .card-size-75x50 { width: 7.5in; height: 5in; }
 .card-size-29x29 { width: 2.9in; height: 2.9in; }
 .card-size-custom { width: var(--custom-width, 2.5in); height: var(--custom-height, 3.5in); }
 .card-size-225x35 .card-back-icon,
 .card-size-25x35 .card-back-icon { width: 1in; height: 1in; }
+.card-size-30x50 .card-back-icon,
 .card-size-35x50 .card-back-icon,
 .card-size-29x29 .card-back-icon { width: 1.5in; height: 1.5in; }
 .card-size-75x50 .card-back-icon { width: 2in; height: 2in; }
