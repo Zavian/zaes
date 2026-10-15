@@ -58,10 +58,20 @@ export const RpgCardCreatorView: React.FC<RpgCardCreatorViewProps> = ({ project,
               href="https://zavian.github.io/generator/generate.html"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-mono rounded font-semibold shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-[#20242D] hover:bg-emerald-50/50 dark:hover:bg-[#282C37] border border-gray-200 dark:border-[#2E333D] text-[#1A1A1A] dark:text-[#F3F4F6] text-xs font-mono rounded transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>Open Live Card Generator</span>
+              <span>Original Version</span>
+              <ArrowUpRight className="w-3 h-3 text-gray-400" />
+            </a>
+            <a
+              href="https://tools.zaes.dev/generator"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-mono rounded font-semibold shadow-xs transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Open New Generator</span>
               <ArrowUpRight className="w-3 h-3" />
             </a>
           </div>
