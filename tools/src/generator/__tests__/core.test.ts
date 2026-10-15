@@ -217,13 +217,13 @@ describe('@icon image', () => {
 
 describe('per-card size', () => {
   it('uses the deck size unless the card has its own', () => {
-    expect(renderFront(newCard(), DEFAULT_OPTIONS)).toContain('card-size-35x50');
+    expect(renderFront(newCard(), DEFAULT_OPTIONS)).toContain('card-size-285x480');
     expect(renderFront({ ...newCard(), card_size: '25x35' } as Card, DEFAULT_OPTIONS)).toContain('card-size-25x35');
   });
   it('supports a custom size on the card and ignores unknown values', () => {
     const out = renderFront({ ...newCard(), card_size: 'custom', custom_width: 4, custom_height: 6 } as Card, DEFAULT_OPTIONS);
     expect(out).toContain('--custom-width:4in');
-    expect(renderFront({ ...newCard(), card_size: 'nope' } as unknown as Card, DEFAULT_OPTIONS)).toContain('card-size-35x50');
+    expect(renderFront({ ...newCard(), card_size: 'nope' } as unknown as Card, DEFAULT_OPTIONS)).toContain('card-size-285x480');
   });
   it('round-trips through the save file', () => {
     const back = parseDeck(serializeDeck([{ ...newCard(), card_size: '30x50' } as Card]))[0];
