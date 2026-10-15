@@ -38,7 +38,6 @@
   flex-direction: column;
   flex: 1;
   font-size: inherit;
-  color: black;
 }
 .card-content-container h4,
 .card-content-container strong,
@@ -148,13 +147,14 @@
 .card-description-name::after { content: "."; }
 .card-description-text { display: inline; }
 .card-action { text-align: center; }
+.card-image { max-width: 100%; object-fit: contain; }
 
 .card-ruler { display: block; width: 100%; height: 1mm; margin-top: 0.3em; margin-bottom: 0.3em; }
 .card-box { display: inline; height: 10mm; width: 10mm; margin-right: 0.3em; }
 
 .card-stats { width: 100%; border-collapse: collapse; background-color: inherit; }
 .card-stats-header { text-align: center; padding: 0; width: 16.6%; font-weight: bold; color: rgb(var(--card-color)); }
-.card-stats-cell { text-align: center; padding: 0; color: black; }
+.card-stats-cell { text-align: center; padding: 0; }
 
 .card-bullet-line { list-style: disc; font-size: inherit; color: black; padding-left: 16px; margin: 0; }
 .card-bullet { display: list-item; margin: 0; font-size: inherit; }

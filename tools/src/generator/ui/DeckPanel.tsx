@@ -73,7 +73,7 @@ export const DeckPanel: React.FC<Props> = ({ deck, onImportJson }) => {
                   className={cx(
                     'flex w-full items-center gap-2.5 pl-3 pr-14 py-1.5 text-left text-sm cursor-pointer transition-colors border-l-2',
                     active
-                      ? 'bg-emerald-50 dark:bg-[#142E1B]/60 border-emerald-600 dark:border-emerald-400 text-[#1A1A1A] dark:text-[#F3F4F6]'
+                      ? 'bg-emerald-50 dark:bg-emerald-500/20 border-emerald-600 dark:border-emerald-400 text-[#1A1A1A] dark:text-white'
                       : 'border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1F222A]'
                   )}
                 >

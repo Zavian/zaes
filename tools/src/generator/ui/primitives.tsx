@@ -6,7 +6,7 @@ export const cx = (...parts: (string | false | null | undefined)[]) => parts.fil
 const base =
   'inline-flex items-center justify-center gap-1.5 rounded border text-xs font-mono transition-colors cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600';
 const variants = {
-  primary: 'bg-emerald-700 dark:bg-emerald-600 border-emerald-700 dark:border-emerald-600 text-white hover:bg-emerald-800 dark:hover:bg-emerald-500',
+  primary: 'bg-emerald-700 dark:bg-emerald-700 border-emerald-700 dark:border-emerald-600 text-white hover:bg-emerald-800 dark:hover:bg-emerald-600',
   secondary:
     'bg-white dark:bg-[#20242D] border-gray-200 dark:border-[#2E333D] text-[#1A1A1A] dark:text-[#F3F4F6] hover:bg-emerald-50/60 dark:hover:bg-[#282C37]',
   ghost: 'border-transparent text-gray-500 dark:text-gray-400 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-gray-100 dark:hover:bg-[#1F222A]',
