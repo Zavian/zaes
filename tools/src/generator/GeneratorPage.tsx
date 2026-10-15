@@ -15,12 +15,27 @@ import { useDeck } from './ui/useDeck';
 
 const CARD_FONTS = 'https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap';
 
+// Matches the `xl` breakpoint, where the preview gets its own column. Only one copy of the preview/export is mounted.
+function useWideScreen() {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia('(min-width: 1280px)');
+    const update = () => setWide(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return wide;
+}
+
 export default function GeneratorPage() {
   const deck = useDeck();
   const { cards, options, current } = deck;
   const [dialog, setDialog] = useState<null | 'print' | 'import' | 'help' | 'sort' | 'filter'>(null);
   const [printing, setPrinting] = useState(false);
   const [uploadSignal, setUploadSignal] = useState(0);
+  const wide = useWideScreen();
   const [toast, setToast] = useState('');
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -172,15 +187,20 @@ export default function GeneratorPage() {
               </div>
             </Panel>
           )}
-          <div className="xl:hidden">
-            <Preview card={current} cards={cards} options={options} />
-          </div>
-          <ExportPanel card={current} options={options} uploadSignal={uploadSignal} notify={notify} />
+          {!wide && (
+            <>
+              <Preview card={current} cards={cards} options={options} />
+              <ExportPanel card={current} options={options} uploadSignal={uploadSignal} notify={notify} />
+            </>
+          )}
         </div>
 
-        <aside className="hidden xl:block xl:h-full xl:overflow-y-auto pr-1">
-          <Preview card={current} cards={cards} options={options} />
-        </aside>
+        {wide && (
+          <aside className="h-full overflow-y-auto pr-1 space-y-5">
+            <Preview card={current} cards={cards} options={options} />
+            <ExportPanel card={current} options={options} uploadSignal={uploadSignal} notify={notify} />
+          </aside>
+        )}
       </div>
 
       {dragging && (
