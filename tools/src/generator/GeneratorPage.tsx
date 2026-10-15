@@ -155,13 +155,18 @@ export default function GeneratorPage() {
             onHelp={() => setDialog('help')}
             onClear={() => cards.length && confirm(`Delete all ${cards.length} cards? This cannot be undone.`) && deck.clear()}
           />
-          <DeckPanel deck={deck} onImportJson={() => setDialog('import')} />
+          <DeckPanel deck={deck} />
           <SettingsPanel options={options} setOptions={deck.setOptions} applyToAll={deck.applyToAll} cardCount={cards.length} />
         </aside>
 
         <div className="space-y-5 min-w-0 lg:h-full lg:overflow-y-auto pr-1">
           {current ? (
-            <CardEditor key={deck.selected} card={current} options={options} onChange={deck.updateCard} />
+            <CardEditor key={deck.selected} card={current} options={options} onChange={deck.updateCard}
+              onNew={() => deck.addCard()}
+              onCopy={deck.duplicateCard}
+              onDelete={() => confirm(`Delete “${current.title || 'Untitled'}”?`) && deck.deleteCard()}
+              onImportJson={() => setDialog('import')}
+            />
           ) : (
             <Panel>
               <div className="p-10 text-center space-y-3">

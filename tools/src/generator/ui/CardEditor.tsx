@@ -1,24 +1,39 @@
 import React from 'react';
+import { Copy, FileJson, Plus, Trash2 } from 'lucide-react';
 import { localImages } from '../core/image';
 import { CARD_SIZES, Card, CardSize, DeckOptions, TITLE_SIZES } from '../core/types';
 import { ColorField } from './ColorField';
 import { ContentEditor } from './ContentEditor';
 import { ImageLibrary } from './ImageLibrary';
 import { IconField } from './IconField';
-import { Input, Label, Panel, Select, Toggle } from './primitives';
+import { Button, Input, Label, Panel, Select, Toggle } from './primitives';
 
 interface Props {
   card: Card;
   options: DeckOptions;
   onChange: (patch: Partial<Card>) => void;
+  onNew: () => void;
+  onCopy: () => void;
+  onDelete: () => void;
+  onImportJson: () => void;
 }
 
-export const CardEditor: React.FC<Props> = ({ card, options, onChange }) => {
+export const CardEditor: React.FC<Props> = ({ card, options, onChange, onNew, onCopy, onDelete, onImportJson }) => {
   const color = card.color ?? '';
   const effectiveColor = card.color || options.default_color;
   const addImage = (name: string, dataUrl: string) => onChange({ images: { ...localImages(card), [name]: dataUrl } });
   return (
-    <Panel title="Card">
+    <Panel
+      title="Card"
+      actions={
+        <div className="flex gap-1.5" role="toolbar" aria-label="Card actions">
+          <Button size="sm" variant="primary" onClick={onNew} title="New card (Alt+N)"><Plus className="w-3.5 h-3.5" /> New</Button>
+          <Button size="sm" onClick={onCopy} title="Duplicate (Alt+D)"><Copy className="w-3.5 h-3.5" /> Copy</Button>
+          <Button size="sm" onClick={onImportJson}><FileJson className="w-3.5 h-3.5" /> Import JSON</Button>
+          <Button size="sm" variant="danger" onClick={onDelete}><Trash2 className="w-3.5 h-3.5" /> Delete</Button>
+        </div>
+      }
+    >
       <div className="p-4 space-y-5">
         <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
           <div>

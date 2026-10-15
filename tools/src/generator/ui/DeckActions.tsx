@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowDownAZ, ChevronDown, CircleHelp, Download, Filter, FolderOpen, Sparkles, Trash2 } from 'lucide-react';
 import { Button, Panel, cx } from './primitives';
 
@@ -14,7 +14,10 @@ interface Props {
 }
 
 export const DeckActions: React.FC<Props> = ({ cardCount, onLoad, onSave, onSample, onSort, onFilter, onHelp, onClear }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(cardCount === 0);
+  const hasCards = cardCount > 0;
+  // Minimize once a deck is loaded; reopen when it empties.
+  useEffect(() => setOpen(!hasCards), [hasCards]);
   return (
   <Panel
     title="Deck file"
