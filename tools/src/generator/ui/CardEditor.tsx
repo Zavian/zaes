@@ -1,6 +1,6 @@
 import React from 'react';
 import { localImages } from '../core/image';
-import { Card, DeckOptions, TITLE_SIZES } from '../core/types';
+import { CARD_SIZES, Card, CardSize, DeckOptions, TITLE_SIZES } from '../core/types';
 import { ColorField } from './ColorField';
 import { ContentEditor } from './ContentEditor';
 import { ImageLibrary } from './ImageLibrary';
@@ -40,6 +40,32 @@ export const CardEditor: React.FC<Props> = ({ card, options, onChange }) => {
               ))}
             </Select>
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="card-own-size" hint="saved with the card">Card size</Label>
+          <Select
+            id="card-own-size"
+            value={card.card_size ?? ''}
+            onChange={(e) => onChange({ card_size: (e.target.value || undefined) as CardSize | undefined })}
+          >
+            <option value="">Deck setting ({CARD_SIZES.find((s) => s.value === options.card_size)?.label.replace(' (Default)', '')})</option>
+            {CARD_SIZES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label.replace(' (Default)', '')}</option>
+            ))}
+          </Select>
+          {card.card_size === 'custom' && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="card-custom-w">Width (in)</Label>
+                <Input id="card-custom-w" type="number" step="0.1" min="0.5" value={card.custom_width ?? options.custom_width} onChange={(e) => onChange({ custom_width: Number(e.target.value) || 2.5 })} />
+              </div>
+              <div>
+                <Label htmlFor="card-custom-h">Height (in)</Label>
+                <Input id="card-custom-h" type="number" step="0.1" min="0.5" value={card.custom_height ?? options.custom_height} onChange={(e) => onChange({ custom_height: Number(e.target.value) || 3.5 })} />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">

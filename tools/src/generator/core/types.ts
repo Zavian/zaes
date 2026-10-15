@@ -15,6 +15,9 @@ export interface Card {
   back_contents: string[];
   tags: string[];
   background_text_toggle?: boolean;
+  card_size?: CardSize; // overrides the deck's card size for this card
+  custom_width?: number; // inches, with card_size 'custom'
+  custom_height?: number;
   [extra: string]: unknown;
 }
 
