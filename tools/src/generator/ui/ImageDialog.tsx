@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ICON_REF, ImageSpec, formatImageLine, imageElement, parseImageLine } from '../core/image';
+import { DEFAULT_SHADOW_OPACITY, ICON_REF, ImageSpec, formatImageLine, imageElement, parseImageLine } from '../core/image';
 import { Card, DeckOptions } from '../core/types';
 import { ColorField } from './ColorField';
 import { Button, Input, Label, Modal, Select, Toggle, cx } from './primitives';
@@ -23,6 +23,30 @@ const splitSize = (size: string) => {
 const joinSize = (w: string, unit: string, h: string) => `${w || '120'}${unit === '%' ? '%' : ''}${h ? `x${h}` : ''}`;
 
 const FILL_NONE = '';
+
+// '' = off, otherwise 'card', 'black' or a picked color.
+const effectMode = (v: string) => (v === '' ? '' : v === 'card' || v === 'black' ? v : 'color');
+
+const EffectColor: React.FC<{ id: string; label: string; value: string; onChange: (v: string) => void; children?: React.ReactNode }> = ({ id, label, value, onChange, children }) => {
+  const mode = effectMode(value);
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <Select id={id} value={mode} onChange={(e) => onChange(e.target.value === 'color' ? '#c0392b' : e.target.value)}>
+        <option value="">None</option>
+        <option value="card">Card color</option>
+        <option value="black">Black</option>
+        <option value="color">Picked color…</option>
+      </Select>
+      {mode === 'color' && (
+        <div className="mt-2">
+          <ColorField value={value} onChange={(v) => onChange(v || '#000000')} />
+        </div>
+      )}
+      {mode !== '' && children}
+    </div>
+  );
+};
 const ALIGNS: ImageSpec['align'][] = ['left', 'center', 'right'];
 
 export const ImageDialog: React.FC<Props> = ({ open, line, card, options, cardColor, iconUrl, onApply, onClose }) => {
@@ -120,6 +144,23 @@ export const ImageDialog: React.FC<Props> = ({ open, line, card, options, cardCo
               </div>
             )}
           </div>
+
+          <EffectColor id="img-shadow" label="Shadow" value={spec.shadow} onChange={(v) => set({ shadow: v })}>
+            <div className="mt-2">
+              <Label htmlFor="img-shadow-opacity" hint={`${spec.shadowOpacity === '' ? DEFAULT_SHADOW_OPACITY : spec.shadowOpacity}%`}>Shadow opacity</Label>
+              <input
+                id="img-shadow-opacity"
+                type="range"
+                min={0}
+                max={100}
+                value={spec.shadowOpacity === '' ? DEFAULT_SHADOW_OPACITY : spec.shadowOpacity}
+                onChange={(e) => set({ shadowOpacity: Number(e.target.value) === DEFAULT_SHADOW_OPACITY ? '' : e.target.value })}
+                className="w-full accent-emerald-600"
+              />
+            </div>
+          </EffectColor>
+
+          <EffectColor id="img-glow" label="Glow" value={spec.glow} onChange={(v) => set({ glow: v })} />
 
           <div>
             <Toggle id="img-radius-card" checked={matchCard} onChange={(v) => set({ radius: v ? '' : String(cardRadius || 4) })} label="Same corner radius as the card" />

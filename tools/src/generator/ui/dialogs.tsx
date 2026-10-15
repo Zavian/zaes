@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BBCODES } from '../core/bbcode';
+import { BBCODES, IMG_BBCODE_HELP } from '../core/bbcode';
 import { DeckParseError, parseDeck } from '../core/normalize';
 import { FS_NOTE, TAG_DOCS } from '../core/tags';
 import { Card } from '../core/types';
@@ -190,7 +190,7 @@ export const HelpDialog: React.FC<{ open: boolean; onClose: () => void }> = ({ o
 
       {tab === 'bbcode' && (
         <dl className="divide-y divide-gray-200 dark:divide-[#2E333D] border border-gray-200 dark:border-[#2E333D] rounded">
-          {BBCODES.map((b) => (
+          {[...BBCODES, IMG_BBCODE_HELP].map((b) => (
             <div key={b.code} className="px-3 py-2">
               <dt className="font-mono text-[15px] text-emerald-700 dark:text-emerald-400">{b.example}</dt>
               <dd className="text-gray-600 dark:text-gray-400" dangerouslySetInnerHTML={{ __html: b.explanation }} />

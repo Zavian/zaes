@@ -205,6 +205,44 @@ describe('image radius and line editing', () => {
   });
 });
 
+describe('image shadow and glow', () => {
+  const PX = 'data:image/png;base64,iVBORw0KGgo=';
+  const html = (line: string, color = '#336699') =>
+    renderFront({ ...newCard(), color, contents: [line], images: { pic: PX } } as Card, DEFAULT_OPTIONS);
+
+  it('adds nothing unless asked', () => {
+    expect(html('image | 80 | @pic')).not.toContain('drop-shadow');
+  });
+
+  it('shadow: black, card color or a picked color, 50% opaque by default', () => {
+    expect(html('image | 80 | @pic | shadow=black')).toContain('drop-shadow(3px 4px 4px rgba(0,0,0,0.5))');
+    expect(html('image | 80 | @pic | shadow=card')).toContain('rgba(51,102,153,0.5)');
+    expect(html('image | 80 | @pic | shadow=#ff0000')).toContain('rgba(255,0,0,0.5)');
+  });
+
+  it('shadow-opacity sets the shadow alpha, clamped to 0-100', () => {
+    expect(html('image | 80 | @pic | shadow=black | shadow-opacity=20')).toContain('rgba(0,0,0,0.2)');
+    expect(html('image | 80 | @pic | shadow=black | shadow-opacity=0')).toContain('rgba(0,0,0,0)');
+    expect(html('image | 80 | @pic | shadow=black | shadow-opacity=900')).toContain('rgba(0,0,0,1)');
+  });
+
+  it('glow is a solid halo around the picture and can combine with a shadow', () => {
+    const out = html('image | 80 | @pic | glow=#ffff00 | shadow=black');
+    expect(out).toContain('drop-shadow(0px 0px 4px rgba(255,255,0,1))');
+    expect(out).toContain('drop-shadow(3px 4px 4px rgba(0,0,0,0.5))');
+  });
+
+  it('ignores an unknown color', () => {
+    expect(html('image | 80 | @pic | glow=nonsense')).not.toContain('drop-shadow');
+  });
+
+  it('round-trips through parse/format', () => {
+    const line = 'image | 80 | @pic | shadow=black | shadow-opacity=30 | glow=card';
+    expect(formatImageLine(parseImageLine(line))).toBe(line);
+    expect(formatImageLine(parseImageLine('image | 80 | @pic | shadow-opacity=30'))).toBe('image | 80 | @pic');
+  });
+});
+
 describe('@icon image', () => {
   it('uses the card icon, painted in the card color by default', () => {
     const c = { ...newCard(), icon: 'sword', color: 'red', contents: ['image | 40 | @icon'] } as Card;
@@ -217,13 +255,13 @@ describe('@icon image', () => {
 
 describe('per-card size', () => {
   it('uses the deck size unless the card has its own', () => {
-    expect(renderFront(newCard(), DEFAULT_OPTIONS)).toContain('card-size-35x50');
+    expect(renderFront(newCard(), DEFAULT_OPTIONS)).toContain('card-size-285x480');
     expect(renderFront({ ...newCard(), card_size: '25x35' } as Card, DEFAULT_OPTIONS)).toContain('card-size-25x35');
   });
   it('supports a custom size on the card and ignores unknown values', () => {
     const out = renderFront({ ...newCard(), card_size: 'custom', custom_width: 4, custom_height: 6 } as Card, DEFAULT_OPTIONS);
     expect(out).toContain('--custom-width:4in');
-    expect(renderFront({ ...newCard(), card_size: 'nope' } as unknown as Card, DEFAULT_OPTIONS)).toContain('card-size-35x50');
+    expect(renderFront({ ...newCard(), card_size: 'nope' } as unknown as Card, DEFAULT_OPTIONS)).toContain('card-size-285x480');
   });
   it('round-trips through the save file', () => {
     const back = parseDeck(serializeDeck([{ ...newCard(), card_size: '30x50' } as Card]))[0];
