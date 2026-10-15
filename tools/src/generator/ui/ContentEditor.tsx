@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bold, ChevronDown, Italic, Swords, Underline } from 'lucide-react';
+import { toggleBbcode } from '../core/bbcode';
 import { COLOR_PALETTE, toHex } from '../core/color';
 import { FS_NOTE, TAG_DOCS } from '../core/tags';
 import { Button, Label, Textarea } from './primitives';
@@ -56,18 +57,12 @@ export const ContentEditor: React.FC<Props> = ({ id, label, lines, onChange, col
     if (el) setLineIndex(el.value.slice(0, el.selectionStart).split('\n').length - 1);
   };
 
-  // Toggle [b]/[i]/[u] around the selection, like the original toolbar.
+  // Toggle [b]/[i]/[u] on the selection (exact, see toggleBbcode).
   const wrap = (code: 'b' | 'i' | 'u') => {
     const el = ref.current;
     if (!el) return;
-    const { selectionStart: s, selectionEnd: e, value } = el;
-    const open = `[${code}]`;
-    const close = `[/${code}]`;
-    if (value.slice(s - open.length, s) === open && value.slice(e, e + close.length) === close) {
-      commit(value.slice(0, s - open.length) + value.slice(s, e) + value.slice(e + close.length), s - open.length, e - open.length);
-    } else {
-      commit(value.slice(0, s) + open + value.slice(s, e) + close + value.slice(e), s + open.length, e + open.length);
-    }
+    const r = toggleBbcode(el.value, el.selectionStart, el.selectionEnd, code);
+    commit(r.value, r.start, r.end);
   };
 
   const insertTag = (insert: string) => {

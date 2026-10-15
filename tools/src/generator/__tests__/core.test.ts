@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import fixture from './fixture-rpg-cards.json';
 import sample from '../sample.json';
-import { bbcodeToHtml } from '../core/bbcode';
+import { bbcodeToHtml, toggleBbcode } from '../core/bbcode';
 import { toHex } from '../core/color';
 import { parseDeck, serializeDeck, DeckParseError } from '../core/normalize';
 import { layoutPages } from '../core/pages';
@@ -107,5 +107,50 @@ describe('print grid', () => {
     expect(fitGrid(DEFAULT_OPTIONS)).toEqual({ cols: 2, rows: 2 });
     expect(gridOverflows({ ...DEFAULT_OPTIONS, card_size: '75x50', page_rows: 3, page_columns: 3 })).toBe(true);
     expect(fitGrid({ ...DEFAULT_OPTIONS, card_size: '25x35' })).toEqual({ cols: 3, rows: 3 });
+  });
+});
+
+describe('toggleBbcode', () => {
+  // `word` is located in the raw text, or give the [start, end] offsets directly.
+  const press = (v: string, word: string | [number, number], codes: ('b' | 'i' | 'u')[]) => {
+    let value = v;
+    let [s, e] = typeof word === 'string' ? [v.indexOf(word), v.indexOf(word) + word.length] : word;
+    for (const c of codes) ({ value, start: s, end: e } = toggleBbcode(value, s, e, c));
+    return value;
+  };
+
+  it('adds and removes a tag', () => {
+    expect(press('a that b', 'that', ['b'])).toBe('a [b]that[/b] b');
+    expect(press('a that b', 'that', ['b', 'b'])).toBe('a that b');
+  });
+
+  it('bold, italic, bold again leaves italic only', () => {
+    expect(press('that', 'that', ['b', 'i', 'b'])).toBe('[i]that[/i]');
+    expect(press('that', 'that', ['b', 'i', 'b', 'i'])).toBe('that');
+  });
+
+  it('unbolds part of a bold span', () => {
+    expect(press('[b]abc[/b]', [4, 5], ['b'])).toBe('[b]a[/b]b[b]c[/b]');
+  });
+
+  it('bolds across an existing bold run without nesting', () => {
+    expect(press('[b]a[/b]bc', [3, 10], ['b'])).toBe('[b]abc[/b]');
+  });
+
+  it('keeps the selection on the same text', () => {
+    const r = toggleBbcode('x that y', 2, 6, 'b');
+    expect(r.value.slice(r.start, r.end)).toBe('that');
+    const r2 = toggleBbcode(r.value, r.start, r.end, 'i');
+    expect(r2.value.slice(r2.start, r2.end)).toBe('that');
+  });
+
+  it('leaves other tags and lines alone', () => {
+    expect(press('one\n[color=red]hot[/color] x\ntwo', 'hot', ['b'])).toBe('one\n[color=red][b]hot[/b][/color] x\ntwo');
+  });
+
+  it('caret only opens an empty pair, and steps out again', () => {
+    const a = toggleBbcode('ab', 1, 1, 'b');
+    expect(a.value).toBe('a[b][/b]b');
+    expect(toggleBbcode(a.value, a.start, a.end, 'b').value).toBe('ab');
   });
 });
