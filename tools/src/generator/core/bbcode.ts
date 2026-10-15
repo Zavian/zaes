@@ -30,6 +30,14 @@ export const BBCODES: BbCode[] = [
   def('right', '', '<p style="text-align: right;">$1</p>', 'Aligns the text to the right.', '[right]text[/right]'),
 ];
 
+// [img] is resolved in image.ts (it needs the card's pictures); listed here so the help shows it.
+export const IMG_BBCODE_HELP: Pick<BbCode, 'code' | 'example' | 'explanation'> = {
+  code: 'img',
+  example: '[img=24]@name[/img]  or  [img=24]https://…/pic.png[/img]',
+  explanation:
+    'A small picture inside a line of text. The number is its height in px. Use <code>@name</code> for a picture added with the Image button (see the card’s pictures list), or paste an https:// link.',
+};
+
 export function bbcodeToHtml(input: string): string {
   let out = input;
   // A few passes so nested codes ([b][i]..[/i][/b]) resolve regardless of order.

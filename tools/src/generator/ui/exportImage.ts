@@ -76,6 +76,35 @@ async function prescaleIcons(host: HTMLElement, scale: number) {
   await Promise.all(jobs);
 }
 
+const BACK_GRADIENT_RE = /radial-gradient\([^,]*,\s*white 20%,\s*(.+?)\s+120%\)/i;
+
+// html2canvas cannot parse `radial-gradient(ellipse at center, ...)`; paint the same gradient to a canvas instead.
+function rasterizeBackGradient(host: HTMLElement, scale: number) {
+  host.querySelectorAll<HTMLElement>('.card-back').forEach((el) => {
+    const edge = BACK_GRADIENT_RE.exec(el.getAttribute('style') ?? '')?.[1];
+    const box = el.getBoundingClientRect();
+    if (!edge || !box.width || !box.height) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(box.width * scale);
+    canvas.height = Math.round(box.height * scale);
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = edge;
+    const end = ctx.fillStyle; // normalised to #rrggbb
+    const mix = (i: number) => Math.round(255 + (parseInt(end.slice(1 + 2 * i, 3 + 2 * i), 16) - 255) * 0.8);
+    // CSS default size is farthest-corner: an ellipse through the corners with the box's aspect ratio.
+    const rx = (canvas.width / 2) * Math.SQRT2;
+    const ry = (canvas.height / 2) * Math.SQRT2;
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    gradient.addColorStop(0.2, '#fff');
+    gradient.addColorStop(1, `rgb(${mix(0)},${mix(1)},${mix(2)})`);
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.scale(rx, ry);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+    el.style.background = `url('${canvas.toDataURL('image/png')}') center / 100% 100% no-repeat`;
+  });
+}
+
 // Render a card's HTML at natural size, off-screen, so the result is crisp regardless of preview scaling.
 export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLCanvasElement> {
   // html2canvas paints the card from the live layout, so line wrapping and spacing match the preview (and the
@@ -88,6 +117,7 @@ export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLC
   try {
     fitTitles(host);
     await prescaleIcons(host, scale);
+    rasterizeBackGradient(host, scale);
     // html2canvas drops the tapered rule SVGs; an <img> of the same SVG is drawn reliably.
     host.querySelectorAll<SVGElement>('svg.card-ruler').forEach((svg) => {
       const box = svg.getBoundingClientRect();
