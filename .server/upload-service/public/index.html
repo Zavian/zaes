@@ -321,7 +321,7 @@
   <div id="gate">
     <div class="gate-box">
       <h1>upload.zaes.dev</h1>
-      <p>Enter your API key to view and manage stored images.</p>
+      <p>Enter your API key to upload, view and manage your files.</p>
       <div class="gate-row">
         <input type="password" id="keyInput" placeholder="API key" autocomplete="off">
         <button class="btn btn-primary" id="unlockBtn">Unlock</button>
@@ -336,6 +336,8 @@
       <div class="brand"><span class="dot"></span> upload.zaes.dev</div>
       <div class="actions">
         <a class="btn" href="/admin.html" style="text-decoration:none;">Admin</a>
+        <input type="file" id="fileInput" multiple hidden accept="image/*,.pdf,.txt,.md,.json,.csv">
+        <button class="btn btn-primary" id="uploadBtn" title="Images are converted to WebP; PDF, txt, md, json and csv are stored as they are">Upload</button>
         <button class="btn" id="refreshBtn">Refresh</button>
         <button class="btn" id="deleteFolderBtn" style="display:none;">Delete this folder</button>
         <button class="btn" id="lockBtn">Lock</button>
@@ -348,9 +350,9 @@
       </div>
       <div class="section-label" id="foldersLabel" style="display:none;">Folders</div>
       <div class="grid" id="folderGrid"></div>
-      <div class="section-label" id="imagesLabel" style="display:none;">Images</div>
+      <div class="section-label" id="imagesLabel" style="display:none;">Files</div>
       <div class="grid" id="grid"></div>
-      <div class="empty-state" id="emptyState" style="display:none;">This folder is empty.</div>
+      <div class="empty-state" id="emptyState" style="display:none;">This folder is empty. Use Upload to add files.</div>
     </main>
   </div>
 
@@ -476,6 +478,9 @@
   const crumbs = document.getElementById('crumbs');
   const deleteFolderBtn = document.getElementById('deleteFolderBtn');
 
+  // A user's files live under u-<id>/ on the server; the gallery hides that and shows their own folders.
+  let rootPrefix = '';
+  const serverPath = (folder) => [rootPrefix, folder].filter(Boolean).join('/');
   let allImages = [];
   let currentFolder = '';
 
@@ -511,16 +516,16 @@
       crumbs.appendChild(el);
     };
     const parts = currentFolder ? currentFolder.split('/') : [];
-    add('All images', '', parts.length === 0);
+    add('All files', '', parts.length === 0);
     parts.forEach((part, i) => add(part, parts.slice(0, i + 1).join('/'), i === parts.length - 1));
   }
 
   async function deleteFolder(folder) {
     const count = allImages.filter((img) => under(img, folder)).length;
-    const noun = count === 1 ? '1 image' : `${count} images`;
+    const noun = count === 1 ? '1 file' : `${count} files`;
     if (!confirm(`Delete folder "${folder}" and the ${noun} in it (subfolders included)? This can't be undone.`)) return;
     try {
-      await apiFetch(`/api/folders/${folder.split('/').map(encodeURIComponent).join('/')}`, { method: 'DELETE' });
+      await apiFetch(`/api/folders/${serverPath(folder).split('/').map(encodeURIComponent).join('/')}`, { method: 'DELETE' });
       showToast(`Deleted ${folder}`);
       // If we were inside the deleted folder, step out to its parent.
       if (currentFolder === folder || currentFolder.startsWith(folder + '/')) {
@@ -541,7 +546,7 @@
       <div class="thumb-wrap">📁</div>
       <div class="card-body">
         <div class="card-name" title="${folder}">${name}</div>
-        <div class="card-meta"><span>${count === 1 ? '1 image' : count + ' images'}</span></div>
+        <div class="card-meta"><span>${count === 1 ? '1 file' : count + ' files'}</span></div>
         <div class="card-actions">
           <button class="icon-btn" data-action="open">Open</button>
           <button class="icon-btn danger" data-action="delete">Delete folder</button>
@@ -561,8 +566,8 @@
     const f = folderGrid.children.length;
     const parts = [];
     if (f) parts.push(f === 1 ? '1 folder' : `${f} folders`);
-    parts.push(n === 1 ? '1 image' : `${n} images`);
-    countText.textContent = parts.join(', ');
+    parts.push(n === 1 ? '1 file' : `${n} files`);
+    countText.textContent = parts.join(', ') + usage;
     emptyState.style.display = n === 0 && f === 0 ? 'block' : 'none';
     foldersLabel.style.display = f ? 'block' : 'none';
     imagesLabel.style.display = n && f ? 'block' : 'none';
@@ -594,7 +599,7 @@
     countText.textContent = 'Loading…';
     try {
       const data = await apiFetch('/api/images');
-      allImages = data.images;
+      allImages = data.images.map((img) => (rootPrefix ? { ...img, folder: (img.folder || '').slice(rootPrefix.length).replace(/^\//, '') } : img));
       renderView();
     } catch (err) {
       if (err.message === 'UNAUTHORIZED') {
@@ -605,13 +610,62 @@
     }
   }
 
+  // ---------- Upload ----------
+  // Images are converted by the server; PDF and text files are stored as they are.
+  // Users' files live under u-<id>/, which the server adds itself, so it is stripped from the folder here.
+  let usage = '';
+  function refreshMe() {
+    return apiFetch('/api/me').then((me) => {
+      rootPrefix = me.admin ? '' : `u-${me.id}`;
+      usage = me.admin ? '' : ` · ${formatBytes(me.usedBytes)} of ${formatBytes(me.quotaBytes)} used`;
+      updateCount();
+    }, () => {});
+  }
+  const fileInput = document.getElementById('fileInput');
+
+  async function uploadFiles(files) {
+    const folder = currentFolder;
+    let done = 0;
+    let lastUrl = '';
+    const failures = [];
+    for (const [n, file] of files.entries()) {
+      showToast(`Uploading ${n + 1} of ${files.length}…`);
+      const body = new FormData();
+      body.append('file', file, file.name);
+      if (folder) body.append('folder', folder);
+      try {
+        const r = await apiFetch('/upload', { method: 'POST', body });
+        done++;
+        lastUrl = r.url;
+      } catch (err) {
+        if (err.message === 'UNAUTHORIZED') return lock('Key rejected by server.');
+        failures.push(`${file.name}: ${err.message}`);
+      }
+    }
+    await refreshMe();
+    await loadImages();
+    if (done === 1 && files.length === 1 && lastUrl) {
+      try { await navigator.clipboard.writeText(lastUrl); showToast('Uploaded, link copied'); } catch { showToast('Uploaded'); }
+    } else if (done) {
+      showToast(`Uploaded ${done} of ${files.length}`);
+    }
+    if (failures.length) setTimeout(() => showToast(failures[0] + (failures.length > 1 ? ` (+${failures.length - 1} more)` : '')), done ? 2000 : 0);
+  }
+
+  document.getElementById('uploadBtn').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const files = [...fileInput.files];
+    fileInput.value = '';
+    if (files.length) uploadFiles(files);
+  });
+
   window.addEventListener('hashchange', () => { if (apiKey) renderView(); });
   deleteFolderBtn.addEventListener('click', () => deleteFolder(currentFolder));
 
   function unlock() {
     gate.style.display = 'none';
     app.style.display = 'block';
-    loadImages();
+    refreshMe().then(loadImages);
   }
 
   function lock(errorMsg) {

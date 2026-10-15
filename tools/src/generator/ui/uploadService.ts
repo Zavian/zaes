@@ -60,21 +60,6 @@ export async function uploadCanvas(canvas: HTMLCanvasElement, key: string): Prom
   return json.url as string;
 }
 
-export interface UploadedFile {
-  url: string;
-  size: number; // bytes stored (images are converted, so this can be smaller than the original)
-  duplicate: boolean;
-}
-
-// Uploads any accepted file as it is; the server converts images and stores PDF/text untouched.
-export async function uploadFile(file: File, key: string, folder = ''): Promise<UploadedFile> {
-  const body = new FormData();
-  body.append('file', file, file.name);
-  if (folder) body.append('folder', folder);
-  const json = await request('/upload', key, { method: 'POST', body });
-  return { url: json.url as string, size: json.size as number, duplicate: Boolean(json.duplicate) };
-}
-
 export const formatMB = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`;
 
 // ---------------------------------------------------------------------------

@@ -26,7 +26,17 @@ const USER_MAX_FILE_BYTES = Number(process.env.USER_MAX_FILE_MB || 5) * 1024 * 1
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://tools.zaes.dev,http://localhost:3000')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
-app.set('trust proxy', true); // behind Cloudflare: req.ip is the visitor
+app.set('trust proxy', true); // behind Cloudflare
+// Cloudflare overwrites CF-Connecting-IP, so unlike X-Forwarded-For a visitor cannot choose it.
+const visitorIp = (req) => req.headers['cf-connecting-ip'] || req.ip;
+
+// Headers for every response: no content sniffing, and the gallery/admin pages cannot be framed (clickjacking).
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
 
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -339,9 +349,16 @@ app.post('/upload', requireApiKey, chooseUpload, async (req, res) => {
     const outputPath = path.join(UPLOAD_DIR, filename);
     const existed = fs.existsSync(outputPath);
 
+    // Raster formats only: SVG and other vector inputs can reference files and are refused.
+    if (!doc) {
+      const meta = await sharp(req.file.buffer, { limitInputPixels: 64e6 }).metadata();
+      if (!['jpeg', 'png', 'webp', 'gif', 'avif', 'heif', 'tiff'].includes(meta.format)) {
+        return res.status(400).json({ error: 'Unsupported image type (use JPEG, PNG, WebP, GIF, AVIF or TIFF)' });
+      }
+    }
     const output = doc
       ? req.file.buffer
-      : await (format === 'png' ? sharp(req.file.buffer).png() : sharp(req.file.buffer).webp({ quality: 85 })).toBuffer();
+      : await (format === 'png' ? sharp(req.file.buffer, { limitInputPixels: 64e6 }).png() : sharp(req.file.buffer, { limitInputPixels: 64e6 }).webp({ quality: 85 })).toBuffer();
 
     if (!principal.admin) {
       const replaced = existed ? fs.statSync(outputPath).size : 0;
@@ -411,7 +428,7 @@ app.delete('/api/invites/:id', requireAdmin, (req, res) => {
 });
 
 app.post('/api/register', (req, res) => {
-  if (tooManyAttempts(req.ip)) return res.status(429).json({ error: 'Too many attempts, try again later' });
+  if (tooManyAttempts(visitorIp(req))) return res.status(429).json({ error: 'Too many attempts, try again later' });
   const code = typeof req.body?.invite === 'string' ? req.body.invite.trim() : '';
   const codeHash = sha256(code);
   const found = code && Object.entries(store.invites).find(([, i]) => i.codeHash === codeHash);
@@ -540,6 +557,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '127.0.0.1', () => { // only the Cloudflare tunnel (same machine) needs to reach it
   console.log(`Upload service running on port ${PORT}`);
 });
