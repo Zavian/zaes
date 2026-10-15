@@ -9,8 +9,6 @@ import { ThemeProvider } from './ThemeContext';
 // The generator is a large, client-only tool: keep it out of the main bundle.
 const GeneratorPage = lazy(() => import('./generator/GeneratorPage'));
 
-const UploadPage = lazy(() => import('./upload/UploadPage'));
-
 const Loading = () => (
   <div className="max-w-4xl mx-auto px-6 py-16 text-sm font-mono text-gray-500 dark:text-gray-400">Loading…</div>
 );
@@ -31,10 +29,6 @@ function Shell({ initialPath }: { initialPath?: string }) {
           {tool?.id === 'generator' ? (
             <Suspense fallback={<Loading />}>
               <GeneratorPage />
-            </Suspense>
-          ) : tool?.id === 'upload' ? (
-            <Suspense fallback={<Loading />}>
-              <UploadPage />
             </Suspense>
           ) : (
             <Home />
