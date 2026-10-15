@@ -18,7 +18,10 @@ export async function preloadIcons(html: string, timeoutMs = 4000) {
 
 // Render a card's HTML at natural size, off-screen, so the result is crisp regardless of preview scaling.
 export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLCanvasElement> {
-  const [{ default: html2canvas }] = await Promise.all([import('html2canvas'), preloadIcons(html), document.fonts?.ready]);
+  // html-to-image lets the browser itself draw the card (as an SVG foreignObject), so text, gradients and the
+  // 512px icons come out exactly as in the preview and at full resolution; html2canvas re-implements CSS and
+  // draws background images at 1x.
+  const [{ toCanvas }] = await Promise.all([import('html-to-image'), preloadIcons(html), document.fonts?.ready]);
   const host = document.createElement('div');
   host.style.cssText = 'position:fixed;left:-100000px;top:0;pointer-events:none;';
   host.innerHTML = html;
@@ -26,16 +29,7 @@ export async function renderCardCanvas(html: string, scale = 2.5): Promise<HTMLC
   try {
     fitTitles(host);
     const el = host.firstElementChild as HTMLElement;
-    // Render at double size and scale down: html2canvas draws the 512px icons with a plain nearest-ish resample,
-    // so supersampling gives clean edges.
-    const big = await html2canvas(el, { scale: scale * 2, useCORS: true, logging: false, backgroundColor: null });
-    const out = document.createElement('canvas');
-    out.width = Math.round(big.width / 2);
-    out.height = Math.round(big.height / 2);
-    const ctx = out.getContext('2d')!;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(big, 0, 0, out.width, out.height);
-    return out;
+    return await toCanvas(el, { pixelRatio: scale });
   } finally {
     host.remove();
   }

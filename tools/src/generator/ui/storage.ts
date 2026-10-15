@@ -87,3 +87,19 @@ export const saveLink = (id: string, links: CardLinks) => {
     /* ignore */
   }
 };
+
+const FORMAT_KEY = 'zaes_upload_format';
+export const loadFormat = (): 'webp' | 'png' => {
+  try {
+    return localStorage.getItem(FORMAT_KEY) === 'png' ? 'png' : 'webp';
+  } catch {
+    return 'webp';
+  }
+};
+export const saveFormat = (f: 'webp' | 'png') => {
+  try {
+    localStorage.setItem(FORMAT_KEY, f);
+  } catch {
+    /* ignore */
+  }
+};
