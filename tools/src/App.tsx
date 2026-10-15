@@ -23,7 +23,7 @@ function Shell({ initialPath }: { initialPath?: string }) {
 
   return (
     <NavProvider value={navigate}>
-      <div className="min-h-screen flex flex-col bg-[#FCFCFC] dark:bg-[#111318] text-[#1A1A1A] dark:text-[#F3F4F6] font-sans selection:bg-gray-200 dark:selection:bg-emerald-400/35 dark:selection:text-white transition-colors">
+      <div className="min-h-screen flex flex-col bg-[#FCFCFC] dark:bg-[#111318] text-[#1A1A1A] dark:text-[#F3F4F6] font-sans selection:bg-gray-200 dark:selection:bg-emerald-400/35 transition-colors">
         <Header path={path} />
         <main className="flex-grow">
           {tool?.id === 'generator' ? (

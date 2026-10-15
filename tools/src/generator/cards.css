@@ -216,3 +216,6 @@
   html.rpg-printing .rpg-sheet:last-child { break-after: auto; page-break-after: auto; }
   html.rpg-printing .card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Cards are always light, so their text selection is too (the page's dark selection would be unreadable on white). */
+.card::selection, .card *::selection { background: #b4d5fe; }
