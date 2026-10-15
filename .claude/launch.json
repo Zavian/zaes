@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "preview", "--", "--port", "4173", "--strictPort"],
       "port": 4173
+    },
+    {
+      "name": "tools",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "tools", "run", "dev"],
+      "port": 3000
     }
   ]
 }

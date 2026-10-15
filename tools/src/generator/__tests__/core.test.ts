@@ -100,9 +100,11 @@ describe('helpers', () => {
 describe('print grid', () => {
   it('fits 7.5x5 cards on A4 as 1 x 2 and flags overflow', async () => {
     const { fitGrid, gridOverflows } = await import('../core/pages');
-    expect(fitGrid(DEFAULT_OPTIONS)).toEqual({ cols: 1, rows: 2 });
+    const big = { ...DEFAULT_OPTIONS, card_size: '75x50' as const, page_rows: 2, page_columns: 1 };
+    expect(fitGrid(big)).toEqual({ cols: 1, rows: 2 });
+    expect(gridOverflows(big)).toBe(false);
     expect(gridOverflows(DEFAULT_OPTIONS)).toBe(false);
-    expect(gridOverflows({ ...DEFAULT_OPTIONS, page_rows: 3, page_columns: 3 })).toBe(true);
+    expect(gridOverflows({ ...DEFAULT_OPTIONS, card_size: '75x50', page_rows: 3, page_columns: 3 })).toBe(true);
     expect(fitGrid({ ...DEFAULT_OPTIONS, card_size: '25x35' })).toEqual({ cols: 3, rows: 3 });
   });
 });

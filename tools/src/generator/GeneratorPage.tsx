@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CircleHelp, Download, Filter, FolderOpen, Printer, Settings2, Sparkles, ArrowDownAZ, Trash2 } from 'lucide-react';
+import { CircleHelp, Download, Filter, FolderOpen, Printer, Sparkles, ArrowDownAZ, Trash2 } from 'lucide-react';
 import './cards.css';
 import { DeckParseError, cleanImportedCard, parseDeck, serializeDeck } from './core/normalize';
 import sample from './sample.json';
@@ -8,7 +8,8 @@ import { DeckPanel } from './ui/DeckPanel';
 import { ExportPanel } from './ui/ExportPanel';
 import { Preview } from './ui/Preview';
 import { PrintSheets } from './ui/PrintSheets';
-import { CodeDialog, HelpDialog, ImportCardDialog, PrintDialog, SettingsDialog } from './ui/dialogs';
+import { SettingsPanel } from './ui/SettingsPanel';
+import { CodeDialog, HelpDialog, ImportCardDialog, PrintDialog } from './ui/dialogs';
 import { Button, Panel } from './ui/primitives';
 import { useDeck } from './ui/useDeck';
 
@@ -17,7 +18,7 @@ const CARD_FONTS = 'https://fonts.googleapis.com/css2?family=Lora:wght@700&famil
 export default function GeneratorPage() {
   const deck = useDeck();
   const { cards, options, current } = deck;
-  const [dialog, setDialog] = useState<null | 'settings' | 'print' | 'import' | 'help' | 'sort' | 'filter'>(null);
+  const [dialog, setDialog] = useState<null | 'print' | 'import' | 'help' | 'sort' | 'filter'>(null);
   const [printing, setPrinting] = useState(false);
   const [uploadSignal, setUploadSignal] = useState(0);
   const [toast, setToast] = useState('');
@@ -91,7 +92,7 @@ export default function GeneratorPage() {
 
   return (
     <div
-      className="max-w-[1700px] mx-auto px-4 sm:px-6 py-6 no-print"
+      className="max-w-[1700px] mx-auto px-4 sm:px-6 py-6 no-print lg:h-[calc(100dvh-4rem)] lg:flex lg:flex-col"
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes('Files')) {
           e.preventDefault();
@@ -106,7 +107,7 @@ export default function GeneratorPage() {
       }}
     >
 
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-5 shrink-0 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#1A1A1A] dark:text-[#F3F4F6]">RPG Card Generator</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Design, preview, print and export tabletop cards. Works with save files from the original generator.</p>
@@ -129,7 +130,6 @@ export default function GeneratorPage() {
           <span className="h-5 w-px bg-gray-200 dark:bg-[#2E333D]" />
           <Button onClick={() => setDialog('sort')} disabled={cards.length < 2}><ArrowDownAZ className="w-3.5 h-3.5" /> Sort</Button>
           <Button onClick={() => setDialog('filter')} disabled={!cards.length}><Filter className="w-3.5 h-3.5" /> Filter</Button>
-          <Button onClick={() => setDialog('settings')}><Settings2 className="w-3.5 h-3.5" /> Settings</Button>
           <Button onClick={() => setDialog('help')} aria-label="Help (F1)" title="Help (F1)"><CircleHelp className="w-3.5 h-3.5" /></Button>
           <Button variant="primary" onClick={() => setDialog('print')} disabled={!cards.length} title="Print (Ctrl+P)"><Printer className="w-3.5 h-3.5" /> Print</Button>
           <Button
@@ -150,12 +150,13 @@ export default function GeneratorPage() {
         </p>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)_minmax(0,1.05fr)] items-start">
-        <aside className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] flex flex-col min-h-0">
+      <div className="grid gap-5 lg:grid-cols-[19rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)_minmax(0,1.05fr)] lg:grid-rows-[minmax(0,1fr)] lg:flex-1 lg:min-h-0">
+        <aside className="lg:h-full lg:overflow-y-auto space-y-5 pr-1">
           <DeckPanel deck={deck} onImportJson={() => setDialog('import')} />
+          <SettingsPanel options={options} setOptions={deck.setOptions} applyToAll={deck.applyToAll} cardCount={cards.length} />
         </aside>
 
-        <div className="space-y-5 min-w-0">
+        <div className="space-y-5 min-w-0 lg:h-full lg:overflow-y-auto pr-1">
           {current ? (
             <CardEditor key={deck.selected} card={current} options={options} onChange={deck.updateCard} />
           ) : (
@@ -177,7 +178,7 @@ export default function GeneratorPage() {
           <ExportPanel card={current} options={options} uploadSignal={uploadSignal} notify={notify} />
         </div>
 
-        <aside className="hidden xl:block xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto pr-1">
+        <aside className="hidden xl:block xl:h-full xl:overflow-y-auto pr-1">
           <Preview card={current} cards={cards} options={options} />
         </aside>
       </div>
@@ -194,7 +195,6 @@ export default function GeneratorPage() {
         </div>
       )}
 
-      <SettingsDialog open={dialog === 'settings'} onClose={() => setDialog(null)} options={options} setOptions={deck.setOptions} applyToAll={deck.applyToAll} cardCount={cards.length} />
       <PrintDialog
         open={dialog === 'print'}
         onClose={() => setDialog(null)}

@@ -42,7 +42,7 @@ export interface DeckOptions {
 }
 
 export const DEFAULT_OPTIONS: DeckOptions = {
-  card_size: '75x50',
+  card_size: '25x35',
   custom_width: 2.5,
   custom_height: 3.5,
   rounded_corners: true,
@@ -51,8 +51,8 @@ export const DEFAULT_OPTIONS: DeckOptions = {
   default_icon: 'ace',
   default_title_size: '13',
   page_size: 'A4',
-  page_rows: 2, // 7.5" x 5" cards on A4
-  page_columns: 1,
+  page_rows: 3, // 2.5" x 3.5" cards on A4
+  page_columns: 3,
   card_arrangement: 'doublesided',
   card_count: null,
   foreground_color: 'white',

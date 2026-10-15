@@ -27,7 +27,7 @@ export const DeckPanel: React.FC<Props> = ({ deck, onImportJson }) => {
     <Panel
       title={`Deck · ${cards.length}`}
       actions={<span className="text-[11px] font-mono text-gray-400 dark:text-gray-500">{total} to print</span>}
-      className="flex flex-col min-h-0 max-h-full"
+      className="flex flex-col"
     >
       <div className="p-3 space-y-3 border-b border-gray-200 dark:border-[#2E333D]">
         <div className="grid grid-cols-3 gap-2">
@@ -61,7 +61,7 @@ export const DeckPanel: React.FC<Props> = ({ deck, onImportJson }) => {
       {cards.length === 0 ? (
         <p className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">No cards yet. Add one, load a file, or try the sample deck.</p>
       ) : (
-        <ul className="overflow-y-auto min-h-0 flex-1 py-1 max-h-72 lg:max-h-none" aria-label="Cards">
+        <ul className="overflow-y-auto py-1 max-h-72" aria-label="Cards">
           {rows.map(({ card, index }) => {
             const active = index === selected;
             return (
