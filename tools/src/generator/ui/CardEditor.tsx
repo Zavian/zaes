@@ -17,7 +17,7 @@ export const CardEditor: React.FC<Props> = ({ card, options, onChange }) => {
   return (
     <Panel title="Card">
       <div className="p-4 space-y-5">
-        <div className="grid gap-4 sm:grid-cols-[1fr_9rem_6rem]">
+        <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
           <div>
             <Label htmlFor="card-title">Name</Label>
             <Input id="card-title" value={card.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Title" />
@@ -36,16 +36,6 @@ export const CardEditor: React.FC<Props> = ({ card, options, onChange }) => {
                 </option>
               ))}
             </Select>
-          </div>
-          <div>
-            <Label htmlFor="card-count">Count</Label>
-            <Input
-              id="card-count"
-              type="number"
-              min={0}
-              value={card.count}
-              onChange={(e) => onChange({ count: Math.max(0, Math.floor(Number(e.target.value)) || 0) })}
-            />
           </div>
         </div>
 
