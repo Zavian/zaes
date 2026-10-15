@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get an API key | upload.zaes.dev</title>
+<style>
+  :root {
+    --bg: #0a0e12;
+    --bg-raised: #10161c;
+    --text: #d7dee3;
+    --text-dim: #8696a0;
+    --accent: #5fd0a8;
+    --accent-dim: #2c5a48;
+    --danger: #e0685f;
+    --line: #1c252c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); }
+  body {
+    font-family: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 16px;
+  }
+  main {
+    width: 100%; max-width: 440px;
+    background: var(--bg-raised); border: 1px solid var(--line); border-radius: 8px; padding: 28px;
+  }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  p { color: var(--text-dim); font-size: 13px; line-height: 1.6; margin: 0 0 18px; }
+  label { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 14px 0 6px; }
+  input {
+    width: 100%; padding: 10px 12px; background: var(--bg); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 13px;
+  }
+  input:focus { outline: 2px solid var(--accent-dim); border-color: var(--accent); }
+  button {
+    cursor: pointer; font: inherit; font-size: 13px; padding: 10px 14px; border-radius: 6px;
+    border: 1px solid var(--accent); background: var(--accent); color: #06130d; font-weight: 600;
+  }
+  button.ghost { background: transparent; color: var(--accent); }
+  #go { width: 100%; margin-top: 18px; }
+  #error { color: var(--danger); font-size: 12px; min-height: 18px; margin-top: 10px; }
+  .keybox { display: flex; gap: 8px; }
+  .keybox input { font-size: 12px; }
+  .warn { color: #e6c36a; }
+  ol { color: var(--text-dim); font-size: 13px; line-height: 1.7; padding-left: 20px; margin: 18px 0 0; }
+  a { color: var(--accent); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <section id="form">
+    <h1>Get an API key</h1>
+    <p>upload.zaes.dev is invite only. Enter the invite code you were sent to create your own key.</p>
+    <label for="invite">Invite code</label>
+    <input id="invite" autocomplete="off" spellcheck="false" placeholder="inv_…">
+    <label for="label">Your name (optional)</label>
+    <input id="label" autocomplete="off" maxlength="60" placeholder="e.g. Alex">
+    <div id="error" role="alert"></div>
+    <button id="go" type="button">Create my key</button>
+  </section>
+
+  <section id="done" hidden>
+    <h1>Your API key</h1>
+    <p class="warn">Copy it now. It is shown once and cannot be recovered; if you lose it you need a new invite.</p>
+    <div class="keybox">
+      <input id="key" readonly aria-label="API key">
+      <button id="copy" class="ghost" type="button">Copy</button>
+    </div>
+    <ol>
+      <li>Open <a href="https://tools.zaes.dev/generator" target="_blank" rel="noopener">the card generator</a>.</li>
+      <li>In the Export panel, paste the key under “Connect to upload.zaes.dev”.</li>
+      <li>Or browse and delete your images in the <a href="/">gallery</a> with the same key.</li>
+    </ol>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  if (params.get('invite')) $('invite').value = params.get('invite');
+
+  $('go').addEventListener('click', async () => {
+    $('error').textContent = '';
+    $('go').disabled = true;
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invite: $('invite').value, label: $('label').value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error(data.error || `Failed (${res.status})`);
+      $('key').value = data.key;
+      $('form').hidden = true;
+      $('done').hidden = false;
+      history.replaceState(null, '', location.pathname); // do not leave the spent code in the address bar
+    } catch (e) {
+      $('error').textContent = e.message;
+    } finally {
+      $('go').disabled = false;
+    }
+  });
+
+  $('copy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('key').value);
+      $('copy').textContent = 'Copied';
+    } catch {
+      $('key').select();
+    }
+  });
+</script>
+</body>
+</html>

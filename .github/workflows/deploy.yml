@@ -3,6 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore: [tools/**, .github/workflows/deploy-tools.yml]
   workflow_dispatch:
 
 permissions:

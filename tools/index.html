@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zavian's Tools</title>
+    <meta name="description" content="Free browser tools for tabletop RPG players and game masters, made by Zavian." />
+    <link rel="canonical" href="https://tools.zaes.dev/" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <meta name="theme-color" content="#FCFCFC" />
+    <meta property="og:title" content="Zavian's Tools" />
+    <meta property="og:description" content="Free browser tools for tabletop RPG players and game masters, made by Zavian." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tools.zaes.dev/" />
+    <meta property="og:site_name" content="Zavian's Tools" />
+    <meta property="og:image" content="https://tools.zaes.dev/android-chrome-512x512.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Zavian's Tools" />
+    <meta name="twitter:description" content="Free browser tools for tabletop RPG players and game masters, made by Zavian." />
+    <script>
+      // Apply the saved/system theme before first paint (mirrors src/ThemeContext.tsx)
+      try {
+        var saved = localStorage.getItem('zaes_theme');
+        var dark = saved === 'dark' || (saved !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      } catch (e) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  </head>
+  <body class="bg-[#FCFCFC] text-[#1A1A1A] antialiased selection:bg-[#E5E5E5] selection:text-[#1A1A1A]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | upload.zaes.dev</title>
+<style>
+  :root {
+    --bg: #0a0e12; --bg-raised: #10161c; --bg-card: #131a21; --text: #d7dee3; --text-dim: #7a8a94;
+    --accent: #5fd0a8; --accent-dim: #2c5a48; --danger: #e0685f; --danger-dim: #4a2b28; --line: #1c252c; --warn: #e6c36a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); }
+  body { font-family: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, monospace; color: var(--text); font-size: 13px; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  [hidden] { display: none !important; }
+  input { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; font: inherit; }
+  input:focus { outline: 2px solid var(--accent-dim); border-color: var(--accent); }
+  button { cursor: pointer; font: inherit; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-card); color: var(--text); }
+  button:hover { border-color: var(--accent-dim); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #06130d; font-weight: 600; }
+  button.danger { color: var(--danger); }
+  button.danger:hover { border-color: var(--danger); background: var(--danger-dim); }
+  button:disabled { opacity: .5; cursor: default; }
+
+  #gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .box { width: 100%; max-width: 380px; background: var(--bg-raised); border: 1px solid var(--line); border-radius: 8px; padding: 26px; }
+  .box h1 { font-size: 17px; margin: 0 0 6px; }
+  .box p { color: var(--text-dim); margin: 0 0 16px; line-height: 1.6; }
+  .row { display: flex; gap: 8px; }
+  .row input { flex: 1; min-width: 0; }
+  #gateError { color: var(--danger); min-height: 18px; margin-top: 10px; font-size: 12px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .brand { font-weight: 600; } .brand span { color: var(--text-dim); font-weight: 400; margin-left: 8px; }
+  .actions { display: flex; gap: 8px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  h2 { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 26px 0 10px; }
+  .summary { color: var(--text-dim); margin-bottom: 8px; }
+  .summary strong { color: var(--text); }
+
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-raised); }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); font-weight: 500; cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sorted::after { content: " ▾"; color: var(--accent); } th.sorted.asc::after { content: " ▴"; }
+  tr:last-child td { border-bottom: 0; }
+  td.id { color: var(--text-dim); }
+  .muted { color: var(--text-dim); }
+  .bar { height: 6px; width: 120px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 5px; }
+  .bar i { display: block; height: 100%; background: var(--accent); } .bar i.high { background: var(--warn); } .bar i.full { background: var(--danger); }
+  .cellbtns { display: flex; gap: 6px; justify-content: flex-end; }
+  .cellbtns button { padding: 5px 9px; font-size: 12px; }
+  .empty { padding: 22px; color: var(--text-dim); text-align: center; }
+  .newinvite { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .newinvite input { width: 240px; }
+  .linkbox { margin-bottom: 14px; padding: 12px; border: 1px solid var(--accent-dim); border-radius: 8px; background: var(--bg-raised); }
+  .linkbox input { width: 100%; margin: 8px 0; font-size: 12px; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--bg-card); border: 1px solid var(--line); padding: 9px 14px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="box">
+    <h1>Admin</h1>
+    <p>Enter the admin API key to see every key, its storage and when it was last used.</p>
+    <div class="row">
+      <input id="keyInput" type="password" autocomplete="off" placeholder="Admin API key">
+      <button class="primary" id="enter" type="button">Enter</button>
+    </div>
+    <div id="gateError" role="alert"></div>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="brand">upload.zaes.dev <span>admin</span></div>
+    <div class="actions">
+      <a href="/" style="align-self:center">Gallery</a>
+      <button id="refresh" type="button">Refresh</button>
+      <button id="lock" type="button">Lock</button>
+    </div>
+  </header>
+  <main>
+    <h2>Keys</h2>
+    <div class="summary" id="summary"></div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="label">Name</th><th data-sort="id">ID</th><th data-sort="createdAt">Created</th>
+            <th data-sort="lastUsedAt">Last used</th><th data-sort="files">Files</th><th data-sort="bytes">Storage</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="users"></tbody>
+      </table>
+    </div>
+
+    <h2>Invites</h2>
+    <div class="newinvite">
+      <input id="inviteLabel" maxlength="60" placeholder="Label (e.g. Alex)">
+      <button class="primary" id="createInvite" type="button">Create invite</button>
+    </div>
+    <div class="linkbox" id="linkbox" hidden>
+      <div>Single-use link. It is shown once; copy it now.</div>
+      <input id="linkOut" readonly aria-label="Invite link">
+      <button id="copyLink" type="button">Copy</button>
+    </div>
+    <div class="scroll">
+      <table style="min-width:480px">
+        <thead><tr><th>Label</th><th>ID</th><th>Created</th><th></th></tr></thead>
+        <tbody id="invites"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+  const STORAGE_KEY = 'zaes_upload_api_key';
+  const $ = (id) => document.getElementById(id);
+  let apiKey = localStorage.getItem(STORAGE_KEY) || '';
+  let users = [];
+  let quota = 0;
+  let sort = { key: 'lastUsedAt', asc: false };
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const bytes = (n) => (n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB');
+  const when = (iso) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—');
+  function ago(iso) {
+    if (!iso) return 'never';
+    const s = Math.max(0, (Date.now() - new Date(iso)) / 1000);
+    for (const [n, label] of [[86400 * 30, 'mo'], [86400, 'd'], [3600, 'h'], [60, 'min']]) if (s >= n) return Math.floor(s / n) + ' ' + label + ' ago';
+    return 'just now';
+  }
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+
+  async function api(path, options = {}) {
+    const res = await fetch(path, { ...options, headers: { ...(options.headers || {}), Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' } });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 401) throw new Error('UNAUTHORIZED');
+    if (!res.ok) throw new Error(body.error || 'Request failed (' + res.status + ')');
+    return body;
+  }
+
+  function renderUsers() {
+    const sorted = [...users].sort((a, b) => {
+      const av = a[sort.key] ?? (typeof a[sort.key] === 'number' ? 0 : ''), bv = b[sort.key] ?? (typeof b[sort.key] === 'number' ? 0 : '');
+      const c = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
+      return sort.asc ? c : -c;
+    });
+    document.querySelectorAll('th[data-sort]').forEach((th) => {
+      th.classList.toggle('sorted', th.dataset.sort === sort.key);
+      th.classList.toggle('asc', th.dataset.sort === sort.key && sort.asc);
+    });
+    const total = users.reduce((n, u) => n + u.bytes, 0);
+    const active30 = users.filter((u) => u.lastUsedAt && Date.now() - new Date(u.lastUsedAt) < 30 * 86400000).length;
+    $('summary').innerHTML = '<strong>' + users.length + '</strong> keys · <strong>' + active30 + '</strong> used in the last 30 days · <strong>' + bytes(total) + '</strong> stored by users';
+    $('users').innerHTML = sorted.length ? sorted.map((u) => {
+      const pct = quota ? Math.min(100, (u.bytes / quota) * 100) : 0;
+      return '<tr>' +
+        '<td>' + esc(u.label) + '</td>' +
+        '<td class="id">' + esc(u.id) + '</td>' +
+        '<td class="muted">' + when(u.createdAt) + '</td>' +
+        '<td title="' + esc(when(u.lastUsedAt)) + '">' + ago(u.lastUsedAt) + '</td>' +
+        '<td>' + u.files + '</td>' +
+        '<td>' + bytes(u.bytes) + (quota ? ' <span class="muted">/ ' + bytes(quota) + '</span><div class="bar"><i class="' + (pct >= 100 ? 'full' : pct >= 80 ? 'high' : '') + '" style="width:' + pct + '%"></i></div>' : '') + '</td>' +
+        '<td><div class="cellbtns"><button class="danger" data-act="files" data-id="' + esc(u.id) + '">Delete files</button><button class="danger" data-act="revoke" data-id="' + esc(u.id) + '">Revoke key</button></div></td>' +
+        '</tr>';
+    }).join('') : '<tr><td colspan="7" class="empty">No keys yet. Create an invite below.</td></tr>';
+  }
+
+  function renderInvites(list) {
+    $('invites').innerHTML = list.length ? list.map((i) =>
+      '<tr><td>' + esc(i.label || '(no label)') + '</td><td class="id">' + esc(i.id) + '</td><td class="muted">' + when(i.createdAt) + '</td>' +
+      '<td><div class="cellbtns"><button class="danger" data-act="invite" data-id="' + esc(i.id) + '">Revoke</button></div></td></tr>'
+    ).join('') : '<tr><td colspan="4" class="empty">No pending invites.</td></tr>';
+  }
+
+  async function load() {
+    const [u, i] = await Promise.all([api('/api/users'), api('/api/invites')]);
+    users = u.users; quota = u.quotaBytes || 0;
+    renderUsers(); renderInvites(i.invites);
+  }
+
+  async function enter(key) {
+    apiKey = key;
+    try {
+      const me = await api('/api/me');
+      if (!me.admin) throw new Error('That is a user key, not the admin key.');
+      localStorage.setItem(STORAGE_KEY, key);
+      $('gate').hidden = true; $('app').hidden = false;
+      await load();
+    } catch (e) {
+      $('app').hidden = true; $('gate').hidden = false;
+      $('gateError').textContent = e.message === 'UNAUTHORIZED' ? 'Invalid API key.' : e.message;
+      if (e.message === 'UNAUTHORIZED') localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+
+  $('enter').addEventListener('click', () => enter($('keyInput').value.trim()));
+  $('keyInput').addEventListener('keydown', (e) => e.key === 'Enter' && enter($('keyInput').value.trim()));
+  $('refresh').addEventListener('click', () => load().then(() => toast('Refreshed')).catch((e) => toast(e.message)));
+  $('lock').addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); apiKey = ''; $('app').hidden = true; $('gate').hidden = false; $('keyInput').value = ''; });
+
+  document.querySelector('thead').addEventListener('click', (e) => {
+    const th = e.target.closest('th[data-sort]');
+    if (!th) return;
+    sort = { key: th.dataset.sort, asc: sort.key === th.dataset.sort ? !sort.asc : th.dataset.sort === 'label' || th.dataset.sort === 'id' };
+    renderUsers();
+  });
+
+  document.querySelector('main').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const id = btn.dataset.id, user = users.find((u) => u.id === id);
+    try {
+      if (btn.dataset.act === 'revoke') {
+        if (!confirm('Revoke the key for "' + user.label + '"? It stops working immediately. Their files stay until you delete them.')) return;
+        await api('/api/users/' + id, { method: 'DELETE' });
+      } else if (btn.dataset.act === 'files') {
+        if (!user.files) return toast('No files to delete');
+        if (!confirm('Permanently delete all ' + user.files + ' files (' + bytes(user.bytes) + ') of "' + user.label + '"? This cannot be undone.')) return;
+        await api('/api/folders/u-' + id, { method: 'DELETE' });
+      } else if (btn.dataset.act === 'invite') {
+        await api('/api/invites/' + id, { method: 'DELETE' });
+      }
+      await load();
+    } catch (err) { toast(err.message); }
+  });
+
+  $('createInvite').addEventListener('click', async () => {
+    try {
+      const r = await api('/api/invites', { method: 'POST', body: JSON.stringify({ label: $('inviteLabel').value }) });
+      $('linkOut').value = location.origin + '/join.html?invite=' + r.code;
+      $('linkbox').hidden = false; $('inviteLabel').value = '';
+      await load();
+    } catch (err) { toast(err.message); }
+  });
+  $('copyLink').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('linkOut').value); toast('Copied'); } catch { $('linkOut').select(); }
+  });
+
+  if (apiKey) enter(apiKey);
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+/*
+ * Card rendering styles. Ported from the original generator (cards.css + card-size.css) and scoped to `.card`.
+ * Written outside any @layer so it wins over Tailwind's preflight reset, which would otherwise flatten the
+ * headings, lists and tables the card markup relies on.
+ */
+.card {
+  --card-color: 116 116 116;
+  border: 2mm solid;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-family: "Noto Sans", "Myriad Pro", Calibri, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  line-height: 1.5;
+  overflow: hidden;
+  text-align: left;
+  flex: none;
+}
+.card *, .card *::before, .card *::after { box-sizing: border-box; }
+.card p, .card h3, .card h4, .card ul { margin: 0; padding: 0; }
+
+.card {
+  border-color: rgb(var(--card-color));
+  color: rgb(var(--card-color));
+  background-color: rgb(var(--card-color));
+}
+.card.rounded-corners { border-radius: 4px; }
+
+.card-content-container {
+  padding: 2mm;
+  padding-top: 1mm;
+  border-radius: 2mm;
+  margin-top: 0;
+  background: white;
+  border-color: inherit;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  font-size: inherit;
+}
+.card-content-container h4,
+.card-content-container strong,
+.card-content-container b,
+.card-content-container em { color: rgb(var(--card-color)); }
+
+.card-back { border-radius: 4mm; border-color: inherit; margin: 3mm; flex: 1; display: flex; }
+.card-back-inner {
+  margin: 3mm;
+  border: 1mm solid;
+  border-color: inherit;
+  border-radius: 4mm;
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+.card-back-icon {
+  width: 1in;
+  height: 1in;
+  border: 4mm solid;
+  border-color: inherit;
+  border-radius: 4mm;
+  background-image: var(--icon);
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.card-title-icon,
+.card-title-inlineicon {
+  background-image: var(--icon);
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-color: inherit;
+  border-color: inherit;
+}
+.card-title-icon { width: 12mm; height: 12mm; }
+.card-title-inlineicon { width: 7mm; height: 7mm; }
+.card-title-icon-container,
+.card-title-inlineicon-container {
+  position: absolute;
+  right: -1mm;
+  top: -1mm;
+  border: 1mm solid;
+  border-radius: 1mm;
+  background-color: inherit;
+  border-color: inherit;
+}
+
+.card-title {
+  height: 8mm;
+  padding-left: 2mm;
+  padding-right: 10mm;
+  font-family: Lora, "Calisto MT", "Bookman Old Style", Bookman, "Goudy Old Style", Garamond, "Hoefler Text", "Bitstream Charter", Georgia, serif;
+  font-variant: small-caps;
+  font-weight: bold;
+  background-color: rgb(var(--card-color));
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.card-title-16 { font-size: 16pt; line-height: 6.5mm; }
+.card-title-15 { font-size: 15pt; line-height: 6.5mm; }
+.card-title-14 { font-size: 14pt; line-height: 6.5mm; }
+.card-title-13 { font-size: 13pt; line-height: 7mm; }
+.card-title-12 { font-size: 12pt; line-height: 7mm; }
+.card-title-11 { font-size: 11pt; line-height: 7.5mm; }
+.card-title-10 { font-size: 10pt; line-height: 7.5mm; }
+
+.card-subtitle { height: 18px; line-height: 18px; font-size: 10pt; font-style: italic; }
+.card-lore { font-size: inherit; font-style: italic; font-weight: bold; color: #e4986e !important; }
+.card-center { text-align: center; }
+.card-picture { height: 80px; line-height: 18px; }
+
+.card-inline-icon {
+  background-image: var(--icon);
+  background-size: auto 80%;
+  background-repeat: no-repeat;
+  background-position: center center;
+  position: relative;
+  border-radius: 2mm;
+}
+.card-inline-icon.align-left { align-self: flex-start; }
+.card-inline-icon.align-right { align-self: flex-end; }
+.card-inline-icon.align-center { align-self: center; }
+
+.card-image-block { flex: none; }
+.card-image-block.align-left { align-self: flex-start; }
+.card-image-block.align-right { align-self: flex-end; }
+.card-image-block.align-center { align-self: center; }
+.card-image { display: block; width: 100%; object-fit: contain; }
+.card-image-fill { width: 100%; height: 100%; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.card-image-inline { display: inline-block; vertical-align: middle; }
+
+.card-property-line { text-indent: -1em; margin-left: 1em; font-size: inherit; color: black; }
+.card-property-name { display: inline; font-size: inherit; font-weight: bold; }
+.card-property-text { display: inline; }
+
+.card-section {
+  border-bottom: 1px solid;
+  font-size: 10pt;
+  font-variant: small-caps;
+  font-weight: normal;
+  letter-spacing: 1px;
+  margin: 0;
+  border-color: inherit;
+}
+.card-section + .card-element { margin-top: 0.3em; }
+
+.card-fill { flex: 1; }
+.card-description-line { margin-top: 0.5em; font-size: inherit; color: black; }
+.card-description-name { display: inline; font-size: inherit; font-style: italic; font-weight: bold; }
+.card-description-name::after { content: "."; }
+.card-description-text { display: inline; }
+.card-action { text-align: center; }
+.card-image { max-width: 100%; object-fit: contain; }
+
+.card-ruler { display: block; width: 100%; height: 1mm; margin-top: 0.3em; margin-bottom: 0.3em; }
+.card-box { display: inline; height: 10mm; width: 10mm; margin-right: 0.3em; }
+
+.card-stats { width: 100%; border-collapse: collapse; background-color: inherit; }
+.card-stats-header { text-align: center; padding: 0; width: 16.6%; font-weight: bold; color: rgb(var(--card-color)); }
+.card-stats-cell { text-align: center; padding: 0; }
+
+.card-bullet-line { list-style: none; font-size: inherit; color: black; padding-left: 16px; margin: 0; }
+.card-bullet { display: block; list-style: none; margin: 0; font-size: inherit; }
+
+/* `| fs-N` text sizes (Bootstrap's scale, pinned to its desktop values) */
+.card .fs-1 { font-size: 2.5rem; }
+.card .fs-2 { font-size: 2rem; }
+.card .fs-3 { font-size: 1.75rem; }
+.card .fs-4 { font-size: 1.5rem; }
+.card .fs-5 { font-size: 1.25rem; }
+.card .fs-6 { font-size: 1rem; }
+
+/* Card sizes */
+.card-size-225x35 { width: 2.25in; height: 3.5in; }
+.card-size-25x35 { width: 2.5in; height: 3.5in; }
+.card-size-30x50 { width: 3in; height: 5in; }
+.card-size-35x50 { width: 3.5in; height: 5in; }
+.card-size-75x50 { width: 7.5in; height: 5in; }
+.card-size-29x29 { width: 2.9in; height: 2.9in; }
+.card-size-custom { width: var(--custom-width, 2.5in); height: var(--custom-height, 3.5in); }
+.card-size-225x35 .card-back-icon,
+.card-size-25x35 .card-back-icon { width: 1in; height: 1in; }
+.card-size-30x50 .card-back-icon,
+.card-size-35x50 .card-back-icon,
+.card-size-29x29 .card-back-icon { width: 1.5in; height: 1.5in; }
+.card-size-75x50 .card-back-icon { width: 2in; height: 2in; }
+.card-size-custom .card-back-icon {
+  width: calc(min(var(--custom-width, 2.5in), var(--custom-height, 3.5in)) * 0.4);
+  height: calc(min(var(--custom-width, 2.5in), var(--custom-height, 3.5in)) * 0.4);
+}
