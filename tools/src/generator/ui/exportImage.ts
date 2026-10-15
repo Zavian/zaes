@@ -1,9 +1,5 @@
 import { fitTitles } from '../core/fit';
 
-// The original generator's shared imgbb key. It is public by nature (it ships in the page), which is
-// how the live tool has always worked; replace it here if the key is ever rotated.
-const IMGBB_KEY = 'a10818892eab6dcc372baa73e41ec14f';
-
 import { ICON_URL_RE } from '../core/assets';
 
 // Wait until every icon referenced by `html` is in the HTTP cache (background images are not awaited by html2canvas/print).
@@ -46,20 +42,4 @@ export function canvasToDownload(canvas: HTMLCanvasElement, filename: string) {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, 'image/png');
-}
-
-export async function uploadCanvas(canvas: HTMLCanvasElement): Promise<string> {
-  let data: string;
-  try {
-    data = canvas.toDataURL('image/jpeg').split(',')[1];
-  } catch {
-    data = canvas.toDataURL().split(',')[1];
-  }
-  const body = new FormData();
-  body.append('key', IMGBB_KEY);
-  body.append('image', data);
-  const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body });
-  const json = await res.json().catch(() => null);
-  if (!res.ok || !json?.success) throw new Error(json?.error?.message || `Upload failed (${res.status})`);
-  return json.data.url as string;
 }

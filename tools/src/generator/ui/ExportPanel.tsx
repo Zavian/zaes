@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Clipboard, Download, Upload } from 'lucide-react';
+import { Check, Clipboard, Download, Link2Off, Upload } from 'lucide-react';
 import { toHex } from '../core/color';
 import { renderBack, renderFront } from '../core/render';
 import { Card, DeckOptions } from '../core/types';
-import { canvasToDownload, renderCardCanvas, uploadCanvas } from './exportImage';
+import { canvasToDownload, renderCardCanvas } from './exportImage';
+import { JOIN_URL, UploadAccount, fetchAccount, formatMB, loadUploadKey, saveUploadKey, uploadCanvas } from './uploadService';
 import { Button, Input, Label, Panel, Textarea } from './primitives';
 import { loadHistory, saveHistory } from './storage';
 
@@ -22,6 +23,49 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
   const [back, setBack] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  const [key, setKey] = useState('');
+  const [account, setAccount] = useState<UploadAccount | null>(null);
+  const [draft, setDraft] = useState('');
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState('');
+
+  // Reconnect with the key saved in this browser.
+  useEffect(() => {
+    const saved = loadUploadKey();
+    if (!saved) return;
+    fetchAccount(saved)
+      .then((a) => {
+        setKey(saved);
+        setAccount(a);
+      })
+      .catch(() => {
+        /* offline or revoked: stay disconnected, the saved key is kept until the user disconnects */
+      });
+  }, []);
+
+  const connect = async () => {
+    const candidate = draft.trim();
+    if (!candidate) return;
+    setConnecting(true);
+    setConnectError('');
+    try {
+      const a = await fetchAccount(candidate);
+      saveUploadKey(candidate);
+      setKey(candidate);
+      setAccount(a);
+      setDraft('');
+    } catch (e) {
+      setConnectError((e as Error).message);
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const disconnect = () => {
+    saveUploadKey('');
+    setKey('');
+    setAccount(null);
+  };
 
   useEffect(() => setHistory(loadHistory()), []);
   // New card selected: previous links no longer apply.
@@ -50,15 +94,17 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
 
   const upload = async () => {
     if (!card) return;
+    if (!key) return notify('Connect to upload.zaes.dev first (Export panel).');
     setBusy('Rendering…');
     try {
       const [f, b] = sides();
       const [fc, bc] = await Promise.all([renderCardCanvas(f), renderCardCanvas(b)]);
       setBusy('Uploading…');
-      const [fu, bu] = await Promise.all([uploadCanvas(fc), uploadCanvas(bc)]);
+      const [fu, bu] = await Promise.all([uploadCanvas(fc, key), uploadCanvas(bc, key)]);
       setFront(fu);
       setBack(bu);
       notify('Uploaded. Links are ready to copy.');
+      fetchAccount(key).then(setAccount, () => undefined);
     } catch (e) {
       notify(`Upload failed: ${(e as Error).message}`);
     } finally {
@@ -113,10 +159,47 @@ export const ExportPanel: React.FC<Props> = ({ card, options, uploadSignal, noti
           <Button onClick={download} disabled={!card || !!busy}>
             <Download className="w-3.5 h-3.5" /> Download PNGs
           </Button>
-          <Button variant="primary" onClick={upload} disabled={!card || !!busy} title="Upload front and back to imgbb (Ctrl+E)">
-            <Upload className="w-3.5 h-3.5" /> Upload to imgbb
+          <Button variant="primary" onClick={upload} disabled={!card || !!busy || !key} title={key ? 'Upload front and back to upload.zaes.dev (Ctrl+E)' : 'Connect to upload.zaes.dev first'}>
+            <Upload className="w-3.5 h-3.5" /> Upload
           </Button>
           {busy && <span className="self-center text-xs font-mono text-gray-500 dark:text-gray-400">{busy}</span>}
+        </div>
+
+        <div className="rounded border border-gray-200 dark:border-[#2E333D] p-3 space-y-2">
+          {key && account ? (
+            <div className="flex items-center justify-between gap-3 text-xs font-mono">
+              <span className="text-gray-600 dark:text-gray-300">
+                Connected to upload.zaes.dev as <strong>{account.label}</strong>
+                {account.quotaBytes > 0 && <span className="text-gray-400 dark:text-gray-500"> · {formatMB(account.usedBytes)} / {formatMB(account.quotaBytes)}</span>}
+              </span>
+              <Button size="sm" variant="ghost" onClick={disconnect} title="Forget the API key in this browser">
+                <Link2Off className="w-3.5 h-3.5" /> Disconnect
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Label htmlFor="upload-key" hint="your personal key for upload.zaes.dev">Connect to upload.zaes.dev</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="upload-key"
+                  type="password"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && void connect()}
+                  placeholder="zup_…"
+                  className="font-mono"
+                />
+                <Button variant="primary" onClick={connect} disabled={!draft.trim() || connecting}>{connecting ? 'Checking…' : 'Connect'}</Button>
+              </div>
+              {connectError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{connectError}</p>}
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Uploading is invite only. Got an invite code?{' '}
+                <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href={JOIN_URL} target="_blank" rel="noopener noreferrer">Create your key</a>. Downloading PNGs needs no key.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="space-y-2">

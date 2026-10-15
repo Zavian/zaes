@@ -24,6 +24,13 @@ npm run build    # vite build + static prerender into dist/
 2. Register it in `src/tools.ts` (home page card, header link, sitemap and prerender come from that list).
 3. Render it in `src/App.tsx`.
 
+## Uploading
+
+The Export panel uploads card images (PNG) to [upload.zaes.dev](https://upload.zaes.dev) and builds the Tabletop
+Simulator line from the links. Each person connects with their own API key: ask for an invite, redeem it at
+`upload.zaes.dev/join.html` and paste the key into the panel (stored only in that browser). Downloading PNGs needs no key.
+For local work against another server set `VITE_UPLOAD_BASE` (for example `http://localhost:3001`).
+
 ## Icons
 
 The 4,000+ game-icons.net icons (CC BY 3.0) are not stored in this repo. They are loaded on demand from
