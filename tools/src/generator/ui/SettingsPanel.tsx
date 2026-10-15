@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { CARD_SIZES, Card, CardSize, DeckOptions, TITLE_SIZES } from '../core/types';
 import { fitGrid } from '../core/pages';
 import { IconField } from './IconField';
-import { Button, Input, Label, Panel, Select, Toggle } from './primitives';
+import { Button, Input, Label, Panel, Select, Toggle, cx } from './primitives';
 
 interface Props {
   options: DeckOptions;
@@ -11,9 +12,22 @@ interface Props {
   cardCount: number;
 }
 
-export const SettingsPanel: React.FC<Props> = ({ options, setOptions, applyToAll, cardCount }) => (
-  <Panel title="Deck settings">
-    <div className="p-4 space-y-5">
+export const SettingsPanel: React.FC<Props> = ({ options, setOptions, applyToAll, cardCount }) => {
+  // Collapsed on small screens, where this panel would otherwise push the editor far down the page.
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia?.('(min-width: 1024px)').matches) setOpen(true);
+  }, []);
+  return (
+  <Panel
+    title="Deck settings"
+    actions={
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={open ? 'Collapse deck settings' : 'Expand deck settings'} className="cursor-pointer text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400">
+        <ChevronDown className={cx('w-4 h-4 transition-transform', open && 'rotate-180')} />
+      </button>
+    }
+  >
+    {open && <div className="p-4 space-y-5">
         <div>
           <Label htmlFor="card-size">Card size</Label>
           <Select id="card-size" value={options.card_size} onChange={(e) => {
@@ -45,33 +59,34 @@ export const SettingsPanel: React.FC<Props> = ({ options, setOptions, applyToAll
           <Toggle checked={options.icon_inline} onChange={(v) => setOptions({ icon_inline: v })} label="Use small front icons" />
         </div>
   
-        <div className="rounded border border-gray-200 dark:border-[#2E333D] p-4 space-y-4">
-          <h3 className="text-[11px] font-mono font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Defaults for cards without their own value</h3>
+        <div className="rounded border border-gray-200 dark:border-[#2E333D] p-3 space-y-3">
+          <h3 className="text-[11px] font-mono font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Card defaults</h3>
           <div>
             <Label>Default icon</Label>
             <IconField label="Default icon" value={options.default_icon} onChange={(v) => setOptions({ default_icon: v })} placeholder="ace" color={options.default_color} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="default-title-size">Default title size</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="min-w-0">
+              <Label htmlFor="default-title-size">Title size</Label>
               <Select id="default-title-size" value={options.default_title_size} onChange={(e) => setOptions({ default_title_size: e.target.value })}>
                 {TITLE_SIZES.map((s) => (
                   <option key={s} value={s}>{s}pt</option>
                 ))}
               </Select>
             </div>
-            <div>
-              <Label htmlFor="default-color">Default color</Label>
+            <div className="min-w-0">
+              <Label htmlFor="default-color">Color</Label>
               <Input id="default-color" value={options.default_color} onChange={(e) => setOptions({ default_color: e.target.value })} className="font-mono" />
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button disabled={!cardCount} onClick={() => confirm(`Set the color of all ${cardCount} cards to "${options.default_color}"?`) && applyToAll({ color: options.default_color })}>Apply color to all</Button>
-            <Button disabled={!cardCount} onClick={() => confirm(`Set the front icon of all ${cardCount} cards to "${options.default_icon}"?`) && applyToAll({ icon: options.default_icon })}>Apply icon to all</Button>
-            <Button disabled={!cardCount} onClick={() => confirm(`Set the back icon of all ${cardCount} cards to "${options.default_icon}"?`) && applyToAll({ icon_back: options.default_icon })}>Apply back icon to all</Button>
-            <Button disabled={!cardCount} onClick={() => confirm(`Set the title size of all ${cardCount} cards to ${options.default_title_size}pt?`) && applyToAll({ title_size: options.default_title_size })}>Apply title size to all</Button>
+          <div className="grid gap-2">
+            <Button className="w-full" disabled={!cardCount} onClick={() => confirm(`Set the color of all ${cardCount} cards to "${options.default_color}"?`) && applyToAll({ color: options.default_color })}>Apply color to all</Button>
+            <Button className="w-full" disabled={!cardCount} onClick={() => confirm(`Set the front icon of all ${cardCount} cards to "${options.default_icon}"?`) && applyToAll({ icon: options.default_icon })}>Apply icon to all</Button>
+            <Button className="w-full" disabled={!cardCount} onClick={() => confirm(`Set the back icon of all ${cardCount} cards to "${options.default_icon}"?`) && applyToAll({ icon_back: options.default_icon })}>Apply back icon to all</Button>
+            <Button className="w-full" disabled={!cardCount} onClick={() => confirm(`Set the title size of all ${cardCount} cards to ${options.default_title_size}pt?`) && applyToAll({ title_size: options.default_title_size })}>Apply title size to all</Button>
           </div>
         </div>
-      </div>
+      </div>}
   </Panel>
-);
+  );
+};

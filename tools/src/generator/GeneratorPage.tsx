@@ -126,6 +126,12 @@ export default function GeneratorPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#1A1A1A] dark:text-[#F3F4F6]">RPG Card Generator</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Design, preview, print and export tabletop cards. Works with save files from the original generator.</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Based on{' '}
+            <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href="https://github.com/crobi/rpg-cards" target="_blank" rel="noopener noreferrer">crobi's rpg-cards</a>
+            . Icons by{' '}
+            <a className="underline hover:text-emerald-600 dark:hover:text-emerald-400" href="https://game-icons.net" target="_blank" rel="noopener noreferrer">game-icons.net</a> (CC BY 3.0).
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Deck actions">
           <input
