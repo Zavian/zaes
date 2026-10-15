@@ -26,7 +26,17 @@ const USER_MAX_FILE_BYTES = Number(process.env.USER_MAX_FILE_MB || 5) * 1024 * 1
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://tools.zaes.dev,http://localhost:3000')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
-app.set('trust proxy', true); // behind Cloudflare: req.ip is the visitor
+app.set('trust proxy', true); // behind Cloudflare
+// Cloudflare overwrites CF-Connecting-IP, so unlike X-Forwarded-For a visitor cannot choose it.
+const visitorIp = (req) => req.headers['cf-connecting-ip'] || req.ip;
+
+// Headers for every response: no content sniffing, and the gallery/admin pages cannot be framed (clickjacking).
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
 
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -59,17 +69,31 @@ function saveHashStore() {
 
 loadHashStore();
 
-// Accept uploads in memory, cap at 25MB, images only
+// Besides images (converted), a few document types are stored as they are.
+const DOC_EXTS = ['pdf', 'txt', 'md', 'json', 'csv'];
+const NOT_ALLOWED = 'Only images, PDF and text files (txt, md, json, csv) are allowed';
+const extOf = (file) => path.extname(file.originalname || '').slice(1).toLowerCase();
+const isDoc = (file) => !file.mimetype.startsWith('image/') && DOC_EXTS.includes(extOf(file));
+const fileFilter = (req, file, cb) => (file.mimetype.startsWith('image/') || DOC_EXTS.includes(extOf(file)) ? cb(null, true) : cb(new Error(NOT_ALLOWED)));
+const STORED_EXT_RE = /\.(webp|png|pdf|txt|md|json|csv)$/i;
+
+// Returns a problem description, or '' when the bytes really are what the extension says.
+function docProblem(buffer, ext) {
+  if (ext === 'pdf') return buffer.subarray(0, 5).toString('latin1') === '%PDF-' ? '' : 'That is not a PDF file';
+  if (buffer.includes(0)) return 'That is not a text file';
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+  } catch {
+    return 'Text files must be UTF-8';
+  }
+  return '';
+}
+
+// Accept uploads in memory, cap at 25MB (admin)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'));
-    }
-  },
+  fileFilter,
 });
 
 function safeCompareKey(token) {
@@ -211,7 +235,7 @@ function isSafeRelPath(rel) {
   const file = parts.pop();
   return parts.length <= MAX_FOLDER_DEPTH
     && parts.every((p) => SEGMENT.test(p))
-    && /^[a-zA-Z0-9_-]+\.(webp|png)$/.test(file);
+    && /^[a-zA-Z0-9_-]+\.(webp|png|pdf|txt|md|json|csv)$/.test(file);
 }
 
 function dropHashesFor(rel) {
@@ -225,7 +249,7 @@ function listImages(dir = '') {
   for (const entry of fs.readdirSync(path.join(UPLOAD_DIR, dir), { withFileTypes: true })) {
     const rel = dir ? `${dir}/${entry.name}` : entry.name;
     if (entry.isDirectory()) out.push(...listImages(rel));
-    else if (/\.(webp|png)$/i.test(entry.name)) {
+    else if (STORED_EXT_RE.test(entry.name)) {
       const stat = fs.statSync(path.join(UPLOAD_DIR, rel));
       out.push({ filename: rel, folder: dir, url: `${PUBLIC_BASE_URL}/i/${rel}`, size: stat.size, uploadedAt: stat.mtime });
     }
@@ -238,9 +262,16 @@ function hashBuffer(buffer) {
 }
 
 // Serve uploaded images statically
+// Documents are never rendered as pages: text types are served as text, with nosniff and (not for PDFs, which Chrome then refuses to show) a sandbox CSP.
 app.use('/i', express.static(UPLOAD_DIR, {
   maxAge: '30d',
   immutable: true,
+  setHeaders: (res, file) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (/\.(txt|md|csv)$/i.test(file)) res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    else if (/\.json$/i.test(file)) res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    if (/\.(txt|md|csv|json)$/i.test(file)) res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'");
+  },
 }));
 
 // Serve the gallery admin page (static, auth happens client-side against the API)
@@ -253,7 +284,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 const userUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: USER_MAX_FILE_BYTES },
-  fileFilter: (req, file, cb) => (file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Only image files are allowed'))),
+  fileFilter,
 });
 const chooseUpload = (req, res, next) => (req.principal.admin ? upload : userUpload).single('file')(req, res, next);
 
@@ -265,7 +296,9 @@ app.post('/upload', requireApiKey, chooseUpload, async (req, res) => {
   // folder / name / format come from the form fields or, for simple clients, the query.
   const rawFolder = req.body?.folder ?? req.query.folder;
   const name = parseName(req.body?.name ?? req.query.name);
-  const format = req.body?.format ?? req.query.format ?? 'webp';
+  const doc = isDoc(req.file);
+  // `format` is what an image is converted to; a document keeps its own extension.
+  const format = doc ? extOf(req.file) : req.body?.format ?? req.query.format ?? 'webp';
   const { principal } = req;
 
   // A user's files live under u-<id>/, with at most two folder levels of their own beneath it.
@@ -277,16 +310,18 @@ app.post('/upload', requireApiKey, chooseUpload, async (req, res) => {
   if (name === null) {
     return res.status(400).json({ error: 'Invalid name (letters, digits, _ or - only; no extension)' });
   }
-  if (format !== 'webp' && format !== 'png') {
+  if (!doc && format !== 'webp' && format !== 'png') {
     return res.status(400).json({ error: 'Invalid format (webp or png)' });
   }
+  const problem = doc ? docProblem(req.file.buffer, format) : '';
+  if (problem) return res.status(400).json({ error: problem });
   const folder = principal.admin ? sub : [userRoot(principal.id), sub].filter(Boolean).join('/');
 
   try {
     const contentHash = hashBuffer(req.file.buffer);
     const prefix = folder ? `${folder}/` : '';
     // Dedupe is per folder and format, so the same bytes in two folders are two files.
-    const hashKey = `${folder ? `${folder}:` : ''}${contentHash}${format === 'png' ? ':png' : ''}`;
+    const hashKey = `${folder ? `${folder}:` : ''}${contentHash}${format === 'webp' ? '' : `:${format}`}`;
 
     // Unnamed upload: if these exact bytes are already stored here, hand back the
     // existing URL. A named upload never dedupes -- it targets one specific path.
@@ -314,14 +349,22 @@ app.post('/upload', requireApiKey, chooseUpload, async (req, res) => {
     const outputPath = path.join(UPLOAD_DIR, filename);
     const existed = fs.existsSync(outputPath);
 
-    const image = sharp(req.file.buffer);
-    const output = await (format === 'png' ? image.png() : image.webp({ quality: 85 })).toBuffer();
+    // Raster formats only: SVG and other vector inputs can reference files and are refused.
+    if (!doc) {
+      const meta = await sharp(req.file.buffer, { limitInputPixels: 64e6 }).metadata();
+      if (!['jpeg', 'png', 'webp', 'gif', 'avif', 'heif', 'tiff'].includes(meta.format)) {
+        return res.status(400).json({ error: 'Unsupported image type (use JPEG, PNG, WebP, GIF, AVIF or TIFF)' });
+      }
+    }
+    const output = doc
+      ? req.file.buffer
+      : await (format === 'png' ? sharp(req.file.buffer, { limitInputPixels: 64e6 }).png() : sharp(req.file.buffer, { limitInputPixels: 64e6 }).webp({ quality: 85 })).toBuffer();
 
     if (!principal.admin) {
       const replaced = existed ? fs.statSync(outputPath).size : 0;
       const { bytes } = folderBytes(userRoot(principal.id));
       if (bytes - replaced + output.length > USER_QUOTA_BYTES) {
-        return res.status(413).json({ error: `Storage quota exceeded (${Math.round(USER_QUOTA_BYTES / 1024 / 1024)} MB). Delete some images first.` });
+        return res.status(413).json({ error: `Storage quota exceeded (${Math.round(USER_QUOTA_BYTES / 1024 / 1024)} MB). Delete some files first.` });
       }
     }
 
@@ -350,7 +393,7 @@ app.post('/upload', requireApiKey, chooseUpload, async (req, res) => {
     });
   } catch (err) {
     console.error('Conversion error:', err);
-    res.status(500).json({ error: 'Failed to process image' });
+    res.status(500).json({ error: 'Failed to process file' });
   }
 });
 
@@ -385,7 +428,7 @@ app.delete('/api/invites/:id', requireAdmin, (req, res) => {
 });
 
 app.post('/api/register', (req, res) => {
-  if (tooManyAttempts(req.ip)) return res.status(429).json({ error: 'Too many attempts, try again later' });
+  if (tooManyAttempts(visitorIp(req))) return res.status(429).json({ error: 'Too many attempts, try again later' });
   const code = typeof req.body?.invite === 'string' ? req.body.invite.trim() : '';
   const codeHash = sha256(code);
   const found = code && Object.entries(store.invites).find(([, i]) => i.codeHash === codeHash);
@@ -507,13 +550,13 @@ app.delete('/api/folders/*', requireApiKey, (req, res) => {
 
 // Multer error handler (file too big, wrong type, etc.)
 app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError || err.message === 'Only image files are allowed') {
+  if (err instanceof multer.MulterError || err.message === NOT_ALLOWED) {
     return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'File too large' : err.message });
   }
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '127.0.0.1', () => { // only the Cloudflare tunnel (same machine) needs to reach it
   console.log(`Upload service running on port ${PORT}`);
 });
