@@ -1,0 +1,167 @@
+{
+  "generated": "2026-10-18T12:55:49.823Z",
+  "addons": [
+    {
+      "name": "ForeverAddonSkins",
+      "title": "Forever Addon Skins",
+      "notes": "Bridge: gives my own addons (ForeverLibraryBooks, ...) the EllesmereUI window treatment, so they match the skinned Forever windows.",
+      "version": "0.5.0",
+      "repo": "Zavian/ForeverAddonSkins",
+      "branch": "main",
+      "updated": "2026-10-18T14:47:09+02:00"
+    },
+    {
+      "name": "ForeverSatchel",
+      "title": "Forever Satchel",
+      "notes": "Two bars: best food/drink (+ Well Fed food and your regen racial) and a cheapest-first delete queue with free bag space.",
+      "version": "0.1.0",
+      "repo": "Zavian/ForeverSatchel",
+      "branch": "master",
+      "updated": "2026-10-18T14:47:01+02:00"
+    },
+    {
+      "name": "TwitchEmotes_EllesmereUI",
+      "title": "Twitch Emotes - EllesmereUI Bridge",
+      "notes": "Animates TwitchEmotes inside EllesmereUI Chat windows. Edits neither addon.",
+      "version": "",
+      "repo": "Zavian/TwitchEmotes_EllesmereUI",
+      "branch": "main",
+      "updated": "2026-10-09T11:32:14+02:00"
+    },
+    {
+      "name": "MapEnhance",
+      "title": "MapEnhance",
+      "notes": "Transport markers (boats, zeppelins, portals, trams), flight master markers, city markers, dungeon/raid entrance markers and profession specialization trainer markers on the world map, your own custom markers (Ctrl+Shift+click), Ctrl+click editing and Ctrl+drag moving of markers and the waypoint, zone level ranges on the hover label, and a fuzzy search box on the map that highlights and zooms to raids, boats, specialization trainers and more.",
+      "version": "0.1.0",
+      "repo": "Zavian/MapEnhance",
+      "branch": "main",
+      "updated": "2026-10-09T11:28:41+02:00"
+    },
+    {
+      "name": "ForeverLibraryBooks",
+      "title": "Forever Library Books & Secret Questlines",
+      "notes": "WoW Forever secrets: every Library Book plus secret questline guides (Cozy Sleeping Bag...) with routing, distance and progress tracking.",
+      "version": "0.9.0",
+      "repo": "Zavian/ForeverLibraryBooks",
+      "branch": "main",
+      "updated": "2026-10-09T11:25:08+02:00"
+    },
+    {
+      "name": "ForeverProfessions",
+      "title": "Forever Professions",
+      "notes": "Interactive wow-professions.com leveling guides: bag-aware shopping list, vendor auto-buy, auction search, waypoints.",
+      "version": "0.1.0",
+      "repo": "Zavian/ForeverProfessions",
+      "branch": "main",
+      "updated": "2026-10-09T11:24:00+02:00"
+    },
+    {
+      "name": "ClickedForeverMedia",
+      "title": "ClickedForeverMedia",
+      "notes": "Icon data for Clicked.",
+      "version": "1.18.1",
+      "repo": "Zavian/ClickedForeverMedia",
+      "branch": "main",
+      "updated": "2026-10-09T11:09:02+02:00"
+    },
+    {
+      "name": "ClickedForever",
+      "title": "Clicked Forever",
+      "notes": "Easy keybind and macro management. Fork of Clicked with better drag and drop and an \"Always use highest rank\" checkbox.",
+      "version": "1.18.1-forever.1",
+      "repo": "Zavian/ClickedForever",
+      "branch": "main",
+      "updated": "2026-10-09T11:08:56+02:00"
+    },
+    {
+      "name": "PoI_Finder",
+      "title": "PoI Finder",
+      "notes": "Fuzzy-find trainers, vendors, flight masters and other points of interest, then set a waypoint with one click.",
+      "version": "0.1.0",
+      "repo": "Zavian/PoI_Finder",
+      "branch": "main",
+      "updated": "2026-10-09T10:36:45+02:00"
+    },
+    {
+      "name": "ForeverHunter",
+      "title": "ForeverHunter",
+      "notes": "Hunter alerts: one alert line (pet, ammo, range, aspect, Auto Shot), a prep row before the pull, an ammo counter. /fh for options.",
+      "version": "2.0",
+      "repo": "Zavian/ForeverHunter",
+      "branch": "main",
+      "updated": "2026-10-05T12:10:31+02:00"
+    },
+    {
+      "name": "ForeverIcons",
+      "title": "Forever Icons",
+      "notes": "Shows the icon name on spell and item tooltips; minimap button opens a fuzzy search that copies an icon's name, texture path or Wowhead link. /fi",
+      "version": "0.1.0",
+      "repo": "Zavian/ForeverIcons",
+      "branch": "main",
+      "updated": "2026-10-05T12:02:18+02:00"
+    },
+    {
+      "name": "QuestHeaderCleaner",
+      "title": "Quest Header Cleaner",
+      "notes": "Shows quest count per quest log zone header and adds buttons to track or abandon every quest under it.",
+      "version": "0.1.0",
+      "repo": "Zavian/QuestHeaderCleaner",
+      "branch": "main",
+      "updated": "2026-10-04T00:28:19+02:00"
+    },
+    {
+      "name": "ThreatProbe",
+      "title": "ThreatProbe",
+      "notes": "Shows your threat on every nameplate as an icon, a bar or a number. /tp for options.",
+      "version": "1.0",
+      "repo": "Zavian/ThreatProbe",
+      "branch": "main",
+      "updated": "2026-10-03T23:33:21+02:00"
+    },
+    {
+      "name": "PetTrainerKnown",
+      "title": "Pet Trainer Known",
+      "notes": "Marks abilities your current pet already knows in the Beast Training window.",
+      "version": "1.0",
+      "repo": "Zavian/PetTrainerKnown",
+      "branch": "main",
+      "updated": "2026-10-03T15:57:04+02:00"
+    },
+    {
+      "name": "ItemTree_EllesmereUIBags",
+      "title": "ItemTree - EllesmereUI Bags",
+      "notes": "Shows ItemTree's New/Changed badges and Keep marks on EllesmereUI Bags slots. Edits neither addon.",
+      "version": "0.1.0",
+      "repo": "Zavian/ItemTree_EllesmereUIBags",
+      "branch": "main",
+      "updated": "2026-10-02T14:18:09+02:00"
+    },
+    {
+      "name": "LFGForeverWhere",
+      "title": "LFG Forever - Where You At",
+      "notes": "Shows each group leader's zone in the LFG Forever window (companion addon).",
+      "version": "1.0.0",
+      "repo": "Zavian/LFGForeverWhere",
+      "branch": "main",
+      "updated": "2026-10-02T14:18:02+02:00"
+    },
+    {
+      "name": "CheapestDelete",
+      "title": "Cheapest Delete",
+      "notes": "Button in the EllesmereUI Bags header that deletes the lowest-value item stack.",
+      "version": "",
+      "repo": "Zavian/CheapestDelete",
+      "branch": "main",
+      "updated": "2026-10-02T14:17:58+02:00"
+    },
+    {
+      "name": "EllesmereCDMRange",
+      "title": "Ellesmere CDM Range",
+      "notes": "Out-of-range (red) / out-of-mana (blue) tint for Cooldown Manager icons.",
+      "version": "1.0",
+      "repo": "Zavian/EllesmereCDMRange",
+      "branch": "main",
+      "updated": "2026-10-02T14:17:53+02:00"
+    }
+  ]
+}

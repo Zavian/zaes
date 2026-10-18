@@ -1,0 +1,3 @@
+# Addon folder names to leave off the page and out of the zips, one per line
+VSSMapPin
+PetAbilityFinder
