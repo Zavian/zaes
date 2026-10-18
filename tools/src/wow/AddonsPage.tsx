@@ -61,7 +61,7 @@ export default function AddonsPage() {
         version of each ticked addon and replaces the old files. No git or account needed.
       </p>
 
-      <div className="sticky top-16 z-30 -mx-2 px-4 py-3 mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded border border-gray-200 dark:border-[#2E333D] bg-white/95 dark:bg-[#181A20]/95 backdrop-blur">
+      <div className="sticky top-20 sm:top-16 z-30 -mx-2 px-4 py-3 mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded border border-gray-200 dark:border-[#2E333D] bg-white/95 dark:bg-[#181A20]/95 backdrop-blur">
         <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
           <strong>{selected.length}</strong> of {addons.length} selected
         </span>
