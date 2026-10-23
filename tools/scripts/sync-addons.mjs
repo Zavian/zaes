@@ -1,4 +1,4 @@
-// Builds src/wow/addons.json from GitHub (needs `gh` logged in): every non-archived repo of the owner
+// Builds src/wow/addons.json from GitHub (GITHUB_TOKEN env, else `gh auth token`): every non-archived repo of the owner
 // whose root has a .toc file is an addon. Also zips each addon's default branch into public/addons/
 // (gitignored; the site serves them, repos stay private). Nothing depends on what is installed locally.
 // Skip repos by listing their names in scripts/addons-hidden.txt (one per line).
@@ -13,7 +13,21 @@ import { promisify } from 'node:util';
 const run = promisify(execFile);
 const owner = process.argv[2] ?? 'Zavian';
 const out = async (cmd, ...args) => (await run(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })).stdout.trim();
-const gh = (...args) => out('gh', ...args);
+const token = process.env.GITHUB_TOKEN || (await out('gh', 'auth', 'token'));
+const api = async (path, raw = false) => {
+  const res = await fetch(`https://api.github.com/${path}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: raw ? 'application/vnd.github.raw' : 'application/vnd.github+json' },
+  });
+  if (!res.ok) throw new Error(`GitHub ${res.status} for ${path}`);
+  return raw ? res.text() : res.json();
+};
+// Token goes to git through env, so it never shows up in argv or error messages.
+const gitEnv = {
+  ...process.env,
+  GIT_CONFIG_COUNT: '1',
+  GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+  GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`,
+};
 
 const hidden = new Set(
   readFileSync(new URL('./addons-hidden.txt', import.meta.url), 'utf8')
@@ -31,19 +45,27 @@ const tocField = (toc, key) => {
   return m ? m[1].trim().replace(/\|c[0-9a-f]{8}|\|r/gi, '') : '';
 };
 
-async function readAddon({ name, defaultBranchRef }) {
-  const branch = defaultBranchRef?.name ?? 'main';
-  const files = JSON.parse(await gh('api', `repos/${owner}/${name}/contents?ref=${branch}`)).map((f) => f.name);
+async function listRepos() {
+  const repos = [];
+  for (let page = 1; ; page++) {
+    const batch = await api(`user/repos?affiliation=owner&per_page=100&page=${page}`);
+    repos.push(...batch.filter((r) => r.owner.login === owner));
+    if (batch.length < 100) return repos;
+  }
+}
+
+async function readAddon({ name, default_branch: branch }) {
+  const files = (await api(`repos/${owner}/${name}/contents?ref=${branch}`)).map((f) => f.name);
   const tocFile = files.find((f) => f.toLowerCase().endsWith('.toc'));
   if (!tocFile) return null;
 
   const [toc, updated] = await Promise.all([
-    gh('api', `repos/${owner}/${name}/contents/${encodeURIComponent(tocFile)}?ref=${branch}`, '-H', 'Accept: application/vnd.github.raw'),
-    gh('api', `repos/${owner}/${name}/commits/${branch}`, '--jq', '.commit.committer.date'),
+    api(`repos/${owner}/${name}/contents/${encodeURIComponent(tocFile)}?ref=${branch}`, true),
+    api(`repos/${owner}/${name}/commits/${branch}`).then((c) => c.commit.committer.date),
   ]);
 
   const clone = join(tmp, name);
-  await out('git', 'clone', '--depth', '1', '--quiet', '--branch', branch, `https://github.com/${owner}/${name}.git`, clone);
+  await run('git', ['clone', '--depth', '1', '--quiet', '--branch', branch, `https://github.com/${owner}/${name}.git`, clone], { env: gitEnv });
   await out('git', '-C', clone, 'archive', '--format=zip', `--prefix=${name}/`, '-o', fileURLToPath(new URL(`${name}.zip`, zipDir)), 'HEAD');
 
   return {
@@ -58,8 +80,7 @@ async function readAddon({ name, defaultBranchRef }) {
 }
 
 try {
-  const repos = JSON.parse(await gh('repo', 'list', owner, '--limit', '300', '--json', 'name,isArchived,defaultBranchRef'));
-  const candidates = repos.filter((r) => !r.isArchived && !hidden.has(r.name));
+  const candidates = (await listRepos()).filter((r) => !r.archived && !hidden.has(r.name));
   const addons = (await Promise.all(candidates.map(readAddon))).filter(Boolean);
   addons.sort((a, b) => b.updated.localeCompare(a.updated));
   writeFileSync(new URL('../src/wow/addons.json', import.meta.url), JSON.stringify({ generated: new Date().toISOString(), addons }, null, 2) + '\n');
