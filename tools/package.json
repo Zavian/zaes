@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "sync-addons": "node scripts/sync-addons.mjs",
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build && tsx scripts/postbuild.tsx",
     "preview": "vite preview",

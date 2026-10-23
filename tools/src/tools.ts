@@ -20,6 +20,15 @@ export const tools: Tool[] = [
     tags: ['Cards', 'Tabletop Simulator'],
     agent: 'Deck API: list, add, update, delete and move cards; import/export the deck. Call navigate("/generator"), then describe() for card shape and tag syntax.',
   },
+  {
+    id: 'wow-addons',
+    path: '/wow-addons',
+    title: 'WoW Addons',
+    tagline: 'Every addon I made, in one place',
+    description:
+      'All my World of Warcraft addons with what they do and when they were last updated, plus a .cmd that downloads or updates them all.',
+    tags: ['World of Warcraft', 'Addons'],
+  },
 ];
 
 export const SITE_URL = 'https://tools.zaes.dev';
