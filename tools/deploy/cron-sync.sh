@@ -6,6 +6,8 @@ set -euo pipefail
 exec 9>"$HOME/.zaes-sync.lock"; flock -n 9 || { echo "already running"; exit 0; }
 
 set -a; . "$HOME/.zaes-sync.env"; set +a
+# wrangler needs Node >=22; the system node (used by other services) stays untouched.
+export PATH="$HOME/node22/bin:$PATH"
 REPO="$HOME/src/zaes-repo"
 STATE="$HOME/.zaes-sync.state"
 log() { echo "$(date -Is) $*"; }
