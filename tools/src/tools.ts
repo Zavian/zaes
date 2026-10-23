@@ -5,6 +5,7 @@ export interface Tool {
   tagline: string;
   description: string;
   tags: string[];
+  agent?: string; // what an AI agent can do on this page through window.agent (shown to agents on every route)
 }
 
 // Add new tools here: they show up on the home page and in the header automatically.
@@ -17,6 +18,7 @@ export const tools: Tool[] = [
     description:
       'Design tabletop RPG cards with a live preview and export images for Tabletop Simulator. Opens save files from the original generator.',
     tags: ['Cards', 'Tabletop Simulator'],
+    agent: 'Deck API: list, add, update, delete and move cards; import/export the deck. Call navigate("/generator"), then describe() for card shape and tag syntax.',
   },
   {
     id: 'wow-addons',

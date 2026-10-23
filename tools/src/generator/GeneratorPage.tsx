@@ -11,6 +11,7 @@ import { SettingsPanel } from './ui/SettingsPanel';
 import { CodeDialog, HelpDialog, ImportCardDialog } from './ui/dialogs';
 import { Button, Panel } from './ui/primitives';
 import { useDeck } from './ui/useDeck';
+import { useAgentApi } from './agent';
 
 const CARD_FONTS = 'https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap';
 
@@ -35,6 +36,7 @@ function useWideScreen() {
 
 export default function GeneratorPage() {
   const deck = useDeck();
+  useAgentApi(deck);
   const { cards, options, current } = deck;
   const [dialog, setDialog] = useState<null | 'import' | 'help' | 'sort' | 'filter'>(null);
   const [uploadSignal, setUploadSignal] = useState(0);

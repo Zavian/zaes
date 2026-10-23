@@ -3,6 +3,7 @@ import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { Home } from './components/Home';
 import { NavProvider, usePath } from './router';
+import { useSiteAgent } from './agent';
 import { SITE_NAME, findTool } from './tools';
 import { ThemeProvider } from './ThemeContext';
 
@@ -17,6 +18,7 @@ const Loading = () => (
 function Shell({ initialPath }: { initialPath?: string }) {
   const [path, navigate] = usePath(initialPath);
   const tool = findTool(path);
+  useSiteAgent(navigate);
 
   useEffect(() => {
     document.title = tool ? `${tool.title} | ${SITE_NAME}` : SITE_NAME;
