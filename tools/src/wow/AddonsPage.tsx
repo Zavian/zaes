@@ -97,13 +97,11 @@ export default function AddonsPage() {
                     {a.version && <span className="ml-2 text-xs font-mono font-normal text-gray-500 dark:text-gray-400">v{a.version}</span>}
                   </h2>
                   <a
-                    href={`https://github.com/${a.repo}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`${a.name} on GitHub`}
-                    className="mt-1.5 text-gray-400 hover:text-emerald-700 dark:hover:text-emerald-400"
+                    href={`/addons/${a.name}.zip`}
+                    download
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-emerald-700 dark:border-emerald-400 text-emerald-700 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-700 hover:text-white dark:hover:bg-emerald-400 dark:hover:text-gray-900 transition-colors"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <Download className="w-4 h-4" /> Download
                   </a>
                 </div>
                 <p className="text-xs font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
